@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.ssc.trackthetrackers.analysis.tooling;
+package io.ssc.trackthetrackers.analysis.extraction.company;
 
 import java.util.StringTokenizer;
 
