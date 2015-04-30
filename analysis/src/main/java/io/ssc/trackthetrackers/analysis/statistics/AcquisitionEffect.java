@@ -26,7 +26,7 @@ import org.apache.flink.util.Collector;
 public class AcquisitionEffect {
 
 	// Need more acquisition data
-	private static String parent = "Google";
+	private static String parent = "Facebook";
 	private static String child = "Instagram";
 
 	private static String argPathToDomainCompany = "/home/sendoh/trackthetrackers/analysis/src/resources/company/DomainAndCompany.csv";
