@@ -1,4 +1,4 @@
-package io.ssc.trackthetrackers.analysis.statistics;
+package io.ssc.trackthetrackers.analysis.performance;
 
 import io.ssc.trackthetrackers.Config;
 

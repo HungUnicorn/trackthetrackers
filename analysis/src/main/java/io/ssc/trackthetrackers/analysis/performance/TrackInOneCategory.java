@@ -1,21 +1,14 @@
-package io.ssc.trackthetrackers.analysis.statistics;
+package io.ssc.trackthetrackers.analysis.performance;
 
 import io.ssc.trackthetrackers.Config;
-import io.ssc.trackthetrackers.analysis.statistics.AcquisitionEffect.ArcReader;
 
 import java.util.regex.Pattern;
 
-import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.RichFilterFunction;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.aggregation.Aggregations;
-import org.apache.flink.api.java.operators.AggregateOperator;
 import org.apache.flink.api.java.operators.DataSource;
-import org.apache.flink.api.java.operators.FlatMapOperator;
-import org.apache.flink.api.java.operators.JoinOperator.DefaultJoin;
-import org.apache.flink.api.java.operators.ProjectOperator;
 import org.apache.flink.api.java.tuple.Tuple1;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -34,8 +27,8 @@ public class TrackInOneCategory {
 	private static String argPathPublisherTracked = Config
 			.get("analysis.results.path") + "Category/" + "PublisherTracked";
 
-	private static String argPathTrackerTracked = Config
-			.get("analysis.results.path") + "Category/" + "TrackerTracked";
+	private static String argPathTrackerTrack = Config
+			.get("analysis.results.path") + "Category/" + "TrackerTrack";
 
 	public static void main(String[] args) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment
@@ -86,7 +79,7 @@ public class TrackInOneCategory {
 				.join(pldNodes).where(0).equalTo(1)
 				.flatMap(new ProjectPLDName());
 		
-		TrackerNameWithNumDomainsTracked.writeAsText(argPathTrackerTracked,
+		TrackerNameWithNumDomainsTracked.writeAsText(argPathTrackerTrack,
 				WriteMode.OVERWRITE);
 		
 		DomainNameWithNumTracker.writeAsText(argPathPublisherTracked,

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.ssc.trackthetrackers.analysis.statistics;
+package io.ssc.trackthetrackers.analysis.performance;
 
 import io.ssc.trackthetrackers.Config;
 
