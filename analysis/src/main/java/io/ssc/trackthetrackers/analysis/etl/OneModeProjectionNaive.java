@@ -31,10 +31,11 @@ import org.apache.flink.util.Collector;
 
 public class OneModeProjectionNaive {
 
-	// private static String argPathToTrackingArcs = Config
-	// .get("analysis.trackingraphsample.path");
+	//private static String argPathToTrackingArcs = Config
+		//	.get("analysis.trackingraphsample.path");
 
-	private static String argPathToTrackingArcs = "/home/sendoh/datasets/projection/sample";
+	 private static String argPathToTrackingArcs =
+	 "/home/sendoh/datasets/projection/sample";
 
 	private static String argPathOut = Config.get("analysis.results.path")
 			+ "UndirectedWeighetedGraph";
@@ -47,18 +48,22 @@ public class OneModeProjectionNaive {
 				.readTextFile(argPathToTrackingArcs);
 
 		DataSet<Tuple2<Long, Long>> trackingArcs = inputTrackingArcs
-				.flatMap(new ArcReader());				
+				.flatMap(new ArcReader());
 
 		// Get neighbors of nodes
 		DataSet<Tuple2<Long, Long[]>> nodesYWithNeighbors = trackingArcs
 				.<Tuple2<Long, Long>> project(1, 0).groupBy(0)
 				.reduceGroup(new GetNeighbors());
 
+		nodesYWithNeighbors.print();
+		
 		DataSet<Tuple2<Long, Long>> edges = nodesYWithNeighbors
 				.flatMap(new AddEdgeIfSharingSameNode());
 
-		DataSet<Tuple3<Long,Long,Long>> undirectedEdges = edges.flatMap(new ArcOneMapper()).groupBy(0,1).aggregate(Aggregations.SUM, 2);
-		
+		DataSet<Tuple3<Long, Long, Long>> undirectedEdges = edges
+				.flatMap(new ArcOneMapper()).groupBy(0, 1)
+				.aggregate(Aggregations.SUM, 2);
+
 		undirectedEdges.writeAsCsv(argPathOut, WriteMode.OVERWRITE);
 
 		env.execute();
@@ -100,7 +105,8 @@ public class OneModeProjectionNaive {
 			// Each two neighbors have one arc
 			for (int i = 0; i < neighbors.length; i++) {
 				for (int j = 0; j < neighbors.length; j++) {
-					// Use one direction to represent undirected arc and eliminate self
+					// Use one direction to represent undirected arc and
+					// eliminate itself
 					if (i != j && i < j) {
 						arcs.add(new Tuple2<Long, Long>(neighbors[i],
 								neighbors[j]));
