@@ -18,17 +18,20 @@ import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.FileSystem.WriteMode;
 import org.apache.flink.util.Collector;
 
-// Get the top degree in undirected weighted graph.
+// Get the top generalizing degree in undirected weighted graph.
+// Generalized degree = alpha * weight + (1-alpha)* # neighbors
+// Ref: http://toreopsahl.com/2010/04/21/article-node-centrality-in-weighted-networks-generalizing-degree-and-shortest-paths/
+
 public class TopDegree {
 
 	private static String argPathToPLD = Config
 			.get("webdatacommons.pldfile.unzipped");
-	private static String argPathToUndirectWeightedGraph = "/home/sendoh/datasets/UndirectedWeighetedGraphTwoPhase";
+	private static String argPathToUndirectWeightedGraph = "/home/sendoh/datasets/UndirectedWeighetedGraph";
 	private static String argPathOut = Config.get("analysis.results.path")
 			+ "TopDegreeUndirect";
 
-	private static int degreeFilter = 100;
-	private static int topK = 20;
+	private static int degreeFilter = 1000;
+	private static int topK = 30;
 
 	public static void main(String args[]) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment
@@ -48,7 +51,7 @@ public class TopDegree {
 		// Compute the degree of every vertex
 		DataSet<Tuple2<Long, Double>> verticesWithDegree = edges
 				.<Tuple2<Long, Double>> project(1, 2).groupBy(0)
-				.reduceGroup(new DegreeOfVertex());
+				.reduceGroup(new GeneralizingDegree ());
 
 		// Focus on the nodes' degree higher than certain degree
 		DataSet<Tuple2<Long, Double>> highDegree = verticesWithDegree
@@ -82,7 +85,7 @@ public class TopDegree {
 		}
 	}
 
-	public static class DegreeOfVertex implements
+	public static class GeneralizingDegree implements
 			GroupReduceFunction<Tuple2<Long, Double>, Tuple2<Long, Double>> {
 		@Override
 		public void reduce(Iterable<Tuple2<Long, Double>> tuples,
@@ -90,15 +93,18 @@ public class TopDegree {
 
 			Iterator<Tuple2<Long, Double>> iterator = tuples.iterator();
 			Long vertexId = iterator.next().f0;
-
+			// Consider #Ties also
+			Long count = 0l;
 			Double weight = (double) 0;
 			while (iterator.hasNext()) {
 				Tuple2<Long, Double> neighbor = iterator.next();
 				Double neighborWeight = neighbor.f1;
 				weight += neighborWeight;
+				count++;
 			}
+			Double totalWeight = 0.5 * weight + 0.5 * count;
 
-			collector.collect(new Tuple2<Long, Double>(vertexId, weight));
+			collector.collect(new Tuple2<Long, Double>(vertexId, totalWeight));
 		}
 	}
 
@@ -133,8 +139,12 @@ public class TopDegree {
 				long source = Long.parseLong(tokens[0]);
 				long target = Long.parseLong(tokens[1]);
 				Double weight = Double.parseDouble(tokens[2]);
+
+				// Undirected graph
 				collector.collect(new Tuple3<Long, Long, Double>(source,
 						target, weight));
+				collector.collect(new Tuple3<Long, Long, Double>(target,
+						source, weight));
 			}
 		}
 	}

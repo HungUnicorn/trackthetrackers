@@ -31,11 +31,11 @@ import org.apache.flink.util.Collector;
 
 public class OneModeProjectionNaive {
 
-	//private static String argPathToTrackingArcs = Config
-		//	.get("analysis.trackingraphsample.path");
+	private static String argPathToTrackingArcs = Config
+			.get("analysis.trackingraphsample.path");
 
-	 private static String argPathToTrackingArcs =
-	 "/home/sendoh/datasets/projection/sample";
+	 /*private static String argPathToTrackingArcs =
+	 "/home/sendoh/datasets/projection/sample";*/
 
 	private static String argPathOut = Config.get("analysis.results.path")
 			+ "UndirectedWeighetedGraph";
@@ -54,8 +54,6 @@ public class OneModeProjectionNaive {
 		DataSet<Tuple2<Long, Long[]>> nodesYWithNeighbors = trackingArcs
 				.<Tuple2<Long, Long>> project(1, 0).groupBy(0)
 				.reduceGroup(new GetNeighbors());
-
-		nodesYWithNeighbors.print();
 		
 		DataSet<Tuple2<Long, Long>> edges = nodesYWithNeighbors
 				.flatMap(new AddEdgeIfSharingSameNode());

@@ -40,9 +40,11 @@ import org.apache.flink.util.Collector;
 
 public class OneModeProjection {
 
-	 private static String argPathToTrackingArcs = Config.get("analysis.trackingraphsample.path");
+	private static String argPathToTrackingArcs = Config
+			.get("analysis.trackingraphsample.path");
 
-	//private static String argPathToTrackingArcs = "/home/sendoh/datasets/projection/sample";
+	// private static String argPathToTrackingArcs =
+	// "/home/sendoh/datasets/projection/sample";
 
 	private static String argPathOut = Config.get("analysis.results.path")
 			+ "UndirectedWeighetedGraphTwoPhase";
@@ -88,17 +90,20 @@ public class OneModeProjection {
 
 		DataSet<Tuple2<Long, Double>> nodeWithWeight = secondDistritbute
 				.groupBy(1).aggregate(Aggregations.SUM, 2)
-				.<Tuple2<Long, Double>> project(1, 2);		
-		
+				.<Tuple2<Long, Double>> project(1, 2);
+
 		// Generate edge based on weight compute before
-		DataSet<Tuple2<Long, Long>> edges = nodesYWithNeighbors.flatMap(
-				new AddEdgeIfSharingSameNode()).distinct();
+		DataSet<Tuple2<Long, Long>> edges = nodesYWithNeighbors
+				.flatMap(new AddEdgeIfSharingSameNode());
 
 		DataSet<Tuple3<Long, Long, Double>> edgesWithWeight = edges.map(
 				new GenerateWeight()).withBroadcastSet(nodeWithWeight,
 				"nodeWithWeight");
 
-		edgesWithWeight.writeAsCsv(argPathOut, WriteMode.OVERWRITE);
+		DataSet<Tuple3<Long, Long, Double>> undirectedWeightedGraph = edgesWithWeight
+				.groupBy(0, 1).aggregate(Aggregations.SUM, 2);
+
+		undirectedWeightedGraph.writeAsCsv(argPathOut, WriteMode.OVERWRITE);
 
 		env.execute();
 
