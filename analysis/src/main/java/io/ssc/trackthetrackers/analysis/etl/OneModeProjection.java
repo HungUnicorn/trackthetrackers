@@ -43,6 +43,9 @@ public class OneModeProjection {
 	private static String argPathToTrackingArcs = Config
 			.get("analysis.trackingraphsample.path");
 
+	private static String argPathToCompanyTrackingArcs =  Config.get("analysis.results.path")
+			+ "TrackingArcsCompanyLevel";
+	
 	// private static String argPathToTrackingArcs =
 	// "/home/sendoh/datasets/projection/sample";
 
@@ -54,7 +57,7 @@ public class OneModeProjection {
 				.getExecutionEnvironment();
 
 		DataSource<String> inputTrackingArcs = env
-				.readTextFile(argPathToTrackingArcs);
+				.readTextFile(argPathToCompanyTrackingArcs);
 
 		DataSet<Tuple2<Long, Long>> trackingArcs = inputTrackingArcs
 				.flatMap(new ArcReader());
