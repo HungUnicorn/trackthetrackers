@@ -1,9 +1,9 @@
 package io.ssc.trackthetrackers.analysis.undirected;
 
 import io.ssc.trackthetrackers.Config;
+import io.ssc.trackthetrackers.analysis.ReaderUtils;
 
 import java.util.Iterator;
-import java.util.regex.Pattern;
 
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -11,8 +11,6 @@ import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.operators.DataSource;
-import org.apache.flink.api.java.tuple.Tuple1;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.FileSystem.WriteMode;
@@ -24,9 +22,11 @@ import org.apache.flink.util.Collector;
 
 public class TopDegree {
 
-	private static String argPathToPLD = Config
-			.get("webdatacommons.pldfile.unzipped");
-	private static String argPathToUndirectWeightedGraph = "/home/sendoh/datasets/UndirectedWeighetedGraph";
+	//private static String argPathToPLD = Config.get("webdatacommons.pldfile.unzipped");
+	private static String argPathToCompanyIndex = "/home/sendoh/trackthetrackers/analysis/src/resources/company/CompanyWithIndex";
+	
+	private static String argPathToUndirectWeightedGraph = "/home/sendoh/datasets/UndirectedWeighetedGraphTwoPhase";
+	
 	private static String argPathOut = Config.get("analysis.results.path")
 			+ "TopDegreeUndirect";
 
@@ -36,29 +36,22 @@ public class TopDegree {
 	public static void main(String args[]) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment
 				.getExecutionEnvironment();
+		
+		DataSet<Tuple2<String, Long>> companyIndex = ReaderUtils.readCompanyIndex(env, argPathToCompanyIndex);		
 
-		DataSource<String> inputEdges = env
-				.readTextFile(argPathToUndirectWeightedGraph);
-
-		DataSource<String> inputNodePLD = env.readTextFile(argPathToPLD);
-
-		DataSet<Tuple2<String, Long>> pldNodes = inputNodePLD
-				.flatMap(new NodeReader());
-
-		DataSet<Tuple3<Long, Long, Double>> edges = inputEdges
-				.flatMap(new EdgeReader());
+		DataSet<Tuple3<Long, Long, Double>> weightedEdges = ReaderUtils.readWeightedEdges(env, argPathToUndirectWeightedGraph);
 
 		// Compute the degree of every vertex
-		DataSet<Tuple2<Long, Double>> verticesWithDegree = edges
+		DataSet<Tuple2<Long, Double>> verticesWithGeneralizingDegree = weightedEdges
 				.<Tuple2<Long, Double>> project(1, 2).groupBy(0)
 				.reduceGroup(new GeneralizingDegree ());
 
 		// Focus on the nodes' degree higher than certain degree
-		DataSet<Tuple2<Long, Double>> highDegree = verticesWithDegree
+		DataSet<Tuple2<Long, Double>> highGeneralizingDegreeDegree = verticesWithGeneralizingDegree
 				.filter(new DegreeFilter());
 
 		// Output 1, ID, value
-		DataSet<Tuple3<Long, Long, Double>> topKMapper = highDegree
+		DataSet<Tuple3<Long, Long, Double>> topKMapper = highGeneralizingDegreeDegree
 				.flatMap(new TopKMapper());
 
 		// Get topK
@@ -67,7 +60,7 @@ public class TopDegree {
 
 		// Node ID joins with node's name
 		DataSet<Tuple2<String, Double>> topKwithName = topKReducer
-				.join(pldNodes).where(1).equalTo(1)
+				.join(companyIndex).where(1).equalTo(1)
 				.flatMap(new ProjectIDWithName());
 
 		topKwithName.writeAsCsv(argPathOut, WriteMode.OVERWRITE);
@@ -107,47 +100,7 @@ public class TopDegree {
 			collector.collect(new Tuple2<Long, Double>(vertexId, totalWeight));
 		}
 	}
-
-	public static class NodeReader implements
-			FlatMapFunction<String, Tuple2<String, Long>> {
-
-		private static final Pattern SEPARATOR = Pattern.compile("[ \t,]");
-
-		@Override
-		public void flatMap(String s, Collector<Tuple2<String, Long>> collector)
-				throws Exception {
-			if (!s.startsWith("%")) {
-				String[] tokens = SEPARATOR.split(s);
-				String node = tokens[0];
-				long nodeIndex = Long.parseLong(tokens[1]);
-				collector.collect(new Tuple2<String, Long>(node, nodeIndex));
-			}
-		}
-	}
-
-	public static class EdgeReader implements
-			FlatMapFunction<String, Tuple3<Long, Long, Double>> {
-
-		private static final Pattern SEPARATOR = Pattern.compile("[ \t,]");
-
-		@Override
-		public void flatMap(String s,
-				Collector<Tuple3<Long, Long, Double>> collector)
-				throws Exception {
-			if (!s.startsWith("%")) {
-				String[] tokens = SEPARATOR.split(s);
-				long source = Long.parseLong(tokens[0]);
-				long target = Long.parseLong(tokens[1]);
-				Double weight = Double.parseDouble(tokens[2]);
-
-				// Undirected graph
-				collector.collect(new Tuple3<Long, Long, Double>(source,
-						target, weight));
-				collector.collect(new Tuple3<Long, Long, Double>(target,
-						source, weight));
-			}
-		}
-	}
+		
 
 	public static class TopKMapper implements
 			FlatMapFunction<Tuple2<Long, Double>, Tuple3<Long, Long, Double>> {

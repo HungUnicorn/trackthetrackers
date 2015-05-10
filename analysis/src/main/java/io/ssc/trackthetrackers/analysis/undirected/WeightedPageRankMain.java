@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.regex.Pattern;
 
 import io.ssc.trackthetrackers.Config;
+import io.ssc.trackthetrackers.analysis.ReaderUtils;
 
 import org.apache.flink.api.common.ProgramDescription;
 import org.apache.flink.api.common.functions.FilterFunction;
@@ -29,16 +30,16 @@ import org.apache.flink.util.Collector;
 
 import java.util.ArrayList;
 
-// Get the top weighted PageRank for undirected weighted graph
+// Get weighted PageRank for undirected weighted graph
 // Due to undirected, the graph is already an ergodic Markov Chain
 // Weight presents the probability to transfer from one node to the other node
-// The process runs as: 1. Normalized weight to make it become probability
+// The process runs as: 1. Normalize weight to make it become probability (edge weight / sum of weight in a node)
 // 2. Distributed rank based on weight rather than degree
 // Ref:Weighted PageRank: cluster-related weights by Danil Nemirovskya and Konstantin Avrachenkovb
 
 public class WeightedPageRankMain implements ProgramDescription {
 
-	private static String argPathToEdges = "/home/sendoh/datasets/UndirectedWeighetedGraphTwoPhase";
+	private static String argPathToWeightedEdges = "/home/sendoh/datasets/UndirectedWeighetedGraphTwoPhase";
 	private static String argPathOut = Config.get("analysis.results.path")
 			+ "TopWeightedPageRank";
 
@@ -49,22 +50,20 @@ public class WeightedPageRankMain implements ProgramDescription {
 
 		ExecutionEnvironment env = ExecutionEnvironment
 				.getExecutionEnvironment();
+		
 
-		DataSource<String> inputEdges = env.readTextFile(argPathToEdges);
-
-		DataSet<Tuple3<Long, Long, Double>> edges = inputEdges
-				.flatMap(new EdgeReader());
+		DataSet<Tuple3<Long, Long, Double>> weightedEdges = ReaderUtils.readWeightedEdges(env, argPathToWeightedEdges);				
 
 		// Get sum of edge weight for each node
-		DataSet<Tuple2<Long, Double>> sumEdgeWeight = edges.groupBy(0)
+		DataSet<Tuple2<Long, Double>> sumEdgeWeight = weightedEdges.groupBy(0)
 				.reduceGroup(new SourceSumEdgeWeight());
 
 		// Normalization:sum of weight is equals to one
-		DataSet<Tuple3<Long, Long, Double>> normalizedEdgeWeight = edges.map(
+		DataSet<Tuple3<Long, Long, Double>> normalizedEdgeWeight = weightedEdges.map(
 				new WeightNormalized()).withBroadcastSet(sumEdgeWeight,
 				"sumEdgeWeight");
 
-		DataSet<Tuple1<Long>> nodes = edges.<Tuple1<Long>> project(0)
+		DataSet<Tuple1<Long>> nodes = weightedEdges.<Tuple1<Long>> project(0)
 				.distinct();
 
 		// Get the total count of nodes
@@ -84,31 +83,7 @@ public class WeightedPageRankMain implements ProgramDescription {
 		pageRanks.writeAsCsv(argPathOut, WriteMode.OVERWRITE);
 		
 		env.execute();
-	}
-
-	public static class EdgeReader implements
-			FlatMapFunction<String, Tuple3<Long, Long, Double>> {
-
-		private static final Pattern SEPARATOR = Pattern.compile("[ \t,]");
-
-		@Override
-		public void flatMap(String s,
-				Collector<Tuple3<Long, Long, Double>> collector)
-				throws Exception {
-			if (!s.startsWith("%")) {
-				String[] tokens = SEPARATOR.split(s);
-				long source = Long.parseLong(tokens[0]);
-				long target = Long.parseLong(tokens[1]);
-				Double weight = Double.parseDouble(tokens[2]);
-
-				// Undirected graph
-				collector.collect(new Tuple3<Long, Long, Double>(source,
-						target, weight));
-				collector.collect(new Tuple3<Long, Long, Double>(target,
-						source, weight));
-			}
-		}
-	}
+	}	
 
 	// Sum the weight of edges
 	public static class SourceSumEdgeWeight

@@ -1,6 +1,7 @@
 package io.ssc.trackthetrackers.analysis.etl;
 
 import io.ssc.trackthetrackers.Config;
+import io.ssc.trackthetrackers.analysis.ReaderUtils;
 import io.ssc.trackthetrackers.analysis.etl.OneModeProjectionNaive.AddEdgeIfSharingSameNode;
 
 import java.util.ArrayList;
@@ -54,13 +55,9 @@ public class OneModeProjection {
 
 	public static void main(String args[]) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment
-				.getExecutionEnvironment();
+				.getExecutionEnvironment();		
 
-		DataSource<String> inputTrackingArcs = env
-				.readTextFile(argPathToCompanyTrackingArcs);
-
-		DataSet<Tuple2<Long, Long>> trackingArcs = inputTrackingArcs
-				.flatMap(new ArcReader());
+		DataSet<Tuple2<Long, Long>> trackingArcs = ReaderUtils.readArcs(env, argPathToCompanyTrackingArcs);
 
 		// Get neighbors of nodes of X
 		DataSet<Tuple2<Long, Long[]>> nodesXWithNeighbors = trackingArcs
@@ -213,22 +210,6 @@ public class OneModeProjection {
 		}
 	}
 
-	public static class ArcReader implements
-			FlatMapFunction<String, Tuple2<Long, Long>> {
-
-		private static final Pattern SEPARATOR = Pattern.compile("[ \t,]");
-
-		@Override
-		public void flatMap(String s, Collector<Tuple2<Long, Long>> collector)
-				throws Exception {
-			if (!s.startsWith("%")) {
-				String[] tokens = SEPARATOR.split(s);
-				long source = Long.parseLong(tokens[0]);
-				long target = Long.parseLong(tokens[1]);
-				collector.collect(new Tuple2<Long, Long>(source, target));
-			}
-		}
-	}
 
 	public static class ProjectJoinArcs
 			implements

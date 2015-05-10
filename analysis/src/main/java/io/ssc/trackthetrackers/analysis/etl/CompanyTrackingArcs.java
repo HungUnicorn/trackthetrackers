@@ -19,8 +19,7 @@
 package io.ssc.trackthetrackers.analysis.etl;
 
 import io.ssc.trackthetrackers.Config;
-import io.ssc.trackthetrackers.analysis.etl.OneModeProjection.ArcReader;
-import io.ssc.trackthetrackers.analysis.undirected.TopDegree.NodeReader;
+import io.ssc.trackthetrackers.analysis.ReaderUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,19 +27,16 @@ import java.util.regex.Pattern;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
-import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.aggregation.Aggregations;
 import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.FileSystem.WriteMode;
 import org.apache.flink.util.Collector;
 
 // Aggregate the arcs to company level
-// (Long)
+// Output:(Long, Long)
 public class CompanyTrackingArcs {
 
 	private static String argPathToDomainCompany = "/home/sendoh/trackthetrackers/analysis/src/resources/company/DomainAndCompany.csv";
@@ -55,25 +51,17 @@ public class CompanyTrackingArcs {
 	public static void main(String args[]) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment
 				.getExecutionEnvironment();
-
-		DataSource<String> inputTrackingArcs = env
-				.readTextFile(argPathToTrackingArcs);
-		DataSet<Tuple2<Long, Long>> trackingArcs = inputTrackingArcs
-				.flatMap(new ArcReader());
+		
+		DataSet<Tuple2<Long, Long>> trackingArcs = ReaderUtils.readArcs(env, argPathToTrackingArcs);				
 
 		DataSource<String> inputDomainCompany = env
 				.readTextFile(argPathToDomainCompany);
 		DataSet<Tuple2<String, String>> domainCompany = inputDomainCompany
 				.flatMap(new DomainReader());
 
-		DataSource<String> inputNodePLD = env.readTextFile(argPathToPLD);
-		DataSet<Tuple2<String, Long>> pldNodes = inputNodePLD
-				.flatMap(new IndexReader());
-
-		DataSource<String> inputCompanyIndex = env
-				.readTextFile(argPathToCompanyIndex);
-		DataSet<Tuple2<String, Long>> companyIndex = inputCompanyIndex
-				.flatMap(new CompanyIndexReader());
+		DataSet<Tuple2<String, Long>> pldNodes = ReaderUtils.readPldIndex(env, argPathToPLD);
+		
+		DataSet<Tuple2<String, Long>> companyIndex = ReaderUtils.readCompanyIndex(env, argPathToCompanyIndex);
 
 		// Get pldIndex and company
 		DataSet<Tuple2<Long, String>> pldIndexWithcompany = domainCompany
@@ -146,40 +134,8 @@ public class CompanyTrackingArcs {
 			return new Tuple2<Long, Long>(source, target);
 		}
 	}
-
-	public static class IndexReader implements
-			FlatMapFunction<String, Tuple2<String, Long>> {
-
-		private static final Pattern SEPARATOR = Pattern.compile("[ \t,]");
-
-		@Override
-		public void flatMap(String s, Collector<Tuple2<String, Long>> collector)
-				throws Exception {
-			if (!s.startsWith("%")) {
-				String[] tokens = SEPARATOR.split(s);
-				String node = tokens[0];
-				long nodeIndex = Long.parseLong(tokens[1]);
-				collector.collect(new Tuple2<String, Long>(node, nodeIndex));
-			}
-		}
-	}
-
-	public static class ArcReader implements
-			FlatMapFunction<String, Tuple2<Long, Long>> {
-
-		private static final Pattern SEPARATOR = Pattern.compile("[ \t,]");
-
-		@Override
-		public void flatMap(String s, Collector<Tuple2<Long, Long>> collector)
-				throws Exception {
-			if (!s.startsWith("%")) {
-				String[] tokens = SEPARATOR.split(s);
-				long source = Long.parseLong(tokens[0]);
-				long target = Long.parseLong(tokens[1]);
-				collector.collect(new Tuple2<Long, Long>(source, target));
-			}
-		}
-	}
+	
+	
 
 	// Keep domains' company full name
 	public static class DomainFullNameReader implements
@@ -195,22 +151,7 @@ public class CompanyTrackingArcs {
 			}
 		}
 	}
-
-	// Company index reader
-	public static class CompanyIndexReader implements
-			FlatMapFunction<String, Tuple2<String, Long>> {
-
-		@Override
-		public void flatMap(String input,
-				Collector<Tuple2<String, Long>> collector) throws Exception {
-			if (!input.startsWith("%")) {			
-				String company = input.substring(0, input.indexOf(",")).trim();
-				Long companyIndex = Long.parseLong(input.substring(input.indexOf(",") + 1));
-				collector.collect(new Tuple2<String, Long>(company, companyIndex));
-			}
-		}
-	}
-
+	
 	// Company's symbol only
 	public static class DomainReader implements
 			FlatMapFunction<String, Tuple2<String, String>> {
