@@ -37,13 +37,15 @@ public class CompanyIndexGenerator {
 		while ((line = bufferedReader.readLine()) != null) {
 			String[] tokens = SEPARATOR.split(line);
 			String company = tokens[1];
-			if (company.length() > 1) {
+			if (company.length() > 1 && !company.toLowerCase().contains("privacy")
+					&& !company.toLowerCase().contains("proxy")) {
 				companySet.add(company);
 			}
 
 		}
 		bufferedReader.close();
 		System.out.println("read");
+		System.out.println("#company: " + companySet.size());
 		return companySet;
 	}
 
@@ -55,9 +57,9 @@ public class CompanyIndexGenerator {
 
 		int key = 0;
 		bufferedWriter.write("NotInWHOis" + "," + key);
-		bufferedWriter.newLine();		
+		bufferedWriter.newLine();
 		key++;
-		
+
 		Iterator<String> iterator = companySet.iterator();
 		while (iterator.hasNext()) {
 			String company = iterator.next();
