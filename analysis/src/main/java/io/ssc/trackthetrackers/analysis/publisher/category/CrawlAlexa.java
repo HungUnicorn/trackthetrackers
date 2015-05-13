@@ -14,35 +14,63 @@ import io.ssc.trackthetrackers.Config;
 // Crawl Alexa category
 public class CrawlAlexa {
 	// Adult, Arts, Business, Computers, Games, Health, Home, Kids_and_Teens,
-	// News, Recreation, Reference, Regional, Science, Shopping, Society, Sports
-
-	//private static ArrayList<String> categoryList;
-	private static String category = "Kids_and_Teens";
+	// News, Recreation, Reference, Science, Shopping, Society, Sports, (World,
+	// Regional are not needed)
 
 	private static String argPathOut = Config.get("analysis.results.path")
-			+ "SiteCategory" + "/" + category;
+			+ "SiteCategory" + "/";
 
 	// top X (page 19th is top 500)
-	private static int numPges = 19;
+	// top x (page 20th is top 525, maximum)
+	private static int numPges = 20;
 
-	private static int delay = 1;
+	private static int pageDelay = 1;
+	private static int categoryDelay = 3;
 
-	public static void main(String args[]) throws IOException,
-			InterruptedException {
+	public static HashSet<String> siteSet;
+	public static ArrayList<String> urlList;
+	public static AlexaTopCategorySite alexa;
 
-		AlexaTopCategorySite alexa = AlexaTopCategorySite.getInstance();
+	public static void main(String args[]) throws InterruptedException,
+			IOException {
+		// 15 categories
+		String[] categories = { "Adult", "Arts", "Business", "Computers",
+				"Games", "Health", "Home", "Kids_and_Teens", "News",
+				"Recreation", "Reference", "Science", "Shopping", "Society",
+				"Sports" };
 
-		HashSet<String> siteSet = new HashSet<String>();
-		ArrayList<String> urlList = new ArrayList<String>();
+		siteSet = new HashSet<String>();
+		urlList = new ArrayList<String>();
+
+		alexa = AlexaTopCategorySite.getInstance();
+		getCategoryFromString(categories[14]);
+	}
+
+	public static void getCategoryFromString(String category)
+			throws IOException, InterruptedException {
+
 		urlList = generateUrl(category);
-
 		for (String url : urlList) {
 			siteSet.addAll(alexa.getSitesInCategory(url));
 			// Wait X MILLISECONDS
-			TimeUnit.SECONDS.sleep(delay);
-
+			TimeUnit.SECONDS.sleep(pageDelay);
 		}
-		writeToDisk(argPathOut, siteSet, category);
+		writeToDisk(argPathOut + category, siteSet, category);
+	}
+
+	// Was caught as a robot ( fail - HTTP error fetching URL. Status=403)
+	public static void getCategoryFromArray(String[] categories)
+			throws IOException, InterruptedException {
+		for (String category : categories) {
+			urlList = generateUrl(category);
+			for (String url : urlList) {
+				siteSet.addAll(alexa.getSitesInCategory(url));
+				// Wait X MILLISECONDS
+				TimeUnit.SECONDS.sleep(pageDelay);
+			}
+			writeToDisk(argPathOut + category, siteSet, category);
+			TimeUnit.SECONDS.sleep(categoryDelay);
+		}
 	}
 
 	public static ArrayList<String> generateUrl(String category) {
@@ -61,7 +89,8 @@ public class CrawlAlexa {
 			String alexaUrlRepeat = "http://www.alexa.com/topsites/category;";
 			urlList.add(alexaUrlRepeat + i + "/Top/" + category);
 		}
-		System.out.println("generate urlList :" + urlList.size());
+		System.out.println("generate urlList : " + category + " - "
+				+ urlList.size());
 		return urlList;
 
 	}
@@ -79,7 +108,7 @@ public class CrawlAlexa {
 			bufferedWriter.newLine();
 		}
 		bufferedWriter.close();
-		System.out.println("write");
+		System.out.println("write: " + category);
 
 	}
 }
