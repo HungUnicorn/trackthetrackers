@@ -22,7 +22,7 @@ public class CrawlAlexa {
 
 	// top X (page 19th is top 500)
 	// top x (page 20th is top 525, maximum)
-	private static int numPges = 20;
+	private static int numPges = 21;
 
 	private static int pageDelay = 1;
 	private static int categoryDelay = 3;
@@ -43,7 +43,7 @@ public class CrawlAlexa {
 		urlList = new ArrayList<String>();
 
 		alexa = AlexaTopCategorySite.getInstance();
-		getCategoryFromString(categories[14]);
+		getCategoryFromString(categories[0]);
 	}
 
 	public static void getCategoryFromString(String category)

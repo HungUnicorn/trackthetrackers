@@ -22,7 +22,7 @@ public class CompanyIndexGenerator {
 	public static void main(String[] args) throws Exception {
 		Set<String> companySet = new HashSet<String>();
 		companySet = readCompany(argPathToDomainCompany);
-		wirteCompanyWithSurrogatekey(argPathOut, companySet);
+		writeCompanyWithSurrogatekey(argPathOut, companySet);
 
 	}
 
@@ -49,7 +49,7 @@ public class CompanyIndexGenerator {
 		return companySet;
 	}
 
-	public static void wirteCompanyWithSurrogatekey(String filePath,
+	public static void writeCompanyWithSurrogatekey(String filePath,
 			Set<String> companySet) throws IOException {
 		FileWriter fileWriter = new FileWriter(filePath);
 
