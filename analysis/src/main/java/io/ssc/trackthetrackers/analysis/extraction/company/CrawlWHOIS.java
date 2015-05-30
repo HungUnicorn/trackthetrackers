@@ -18,16 +18,15 @@
 
 package io.ssc.trackthetrackers.analysis.extraction.company;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import io.ssc.trackthetrackers.Config;
+import io.ssc.trackthetrackers.analysis.extraction.DomainParser;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -44,7 +43,7 @@ import org.apache.flink.shaded.com.google.common.net.InternetDomainName;
 // mainly due to connection refused or irregular whois response.
 // If encountering "Connection refused", this process needs to wait for days.
 // If encountering "No such element", that whois response doesn't contain administrative organization information.
-
+// Can refer to the site : https://who.is/
 /**
  * ICANN term of use: All results shown are captured from registries and/or
  * registrars and are framed in real-time. ICANN does not generate, collect,
@@ -66,59 +65,75 @@ import org.apache.flink.shaded.com.google.common.net.InternetDomainName;
 public class CrawlWHOIS {
 
 	// Every x MILLISECONDS get WHOIS once
-	private static int WHOISdelay = 50;
+	private static int WHOISdelay = 100;
 
 	// If lookup takes too long, it's mainly due to connection refused or
 	// irregular whois response, so kill this lookup and continue to the next
 	// lookup
 	private static int WHOISTimeout = 2;
 
-	private static String domainComapnyPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/DomainAndCompany.csv";
-	private static String domainLookupPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/TopDomains";
+	private static String domainCompanyPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/DomainAndCompany.csv";
+	private static String domainLookupPath = Config.get("analysis.results.path") + "topTrafficThirdParty";
 	private static String exceptionDomainPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/ExceptionDomain.csv";
-	private static FileReader fileReader;
-	private static BufferedReader bufferedReader;
+	private static FileIO fileIO;
 
 	private static boolean INCREMENTAL_EXTRACTION;
 
 	private static HashMap<String, String> domainCompanyMap;
 	private static HashMap<String, String> domainKnownMap;
-	private static HashSet<String> domainCheckingSet;
-	private static HashSet<String> exceptionDomainSet;
+	private static Set<String> domainCheckingSet;
+	private static Set<String> exceptionDomainSet;
 
 	private static String company = "N/A";
 
-	public static void main(String args[]) throws Exception {
+	private static DomainParser domainParser;
 
+	public static void main(String args[]) throws Exception {
+		
+		crawl();
+		//test("ajax.googleapis");
+	}
+
+	public static void test(String domain) throws Exception {
+		domainParser = new DomainParser();
+		String processedDomain = domainParser.whoisDomain("gov.ph");
+		System.out.println("test: " + processedDomain);
+		WhoisParser whoisParser = new WhoisParser();
+		whoisParser.getFullResult(processedDomain);
+		System.out.println("tested");
+
+	}
+
+	public static void crawl() throws IOException, InterruptedException {
+		domainParser = new DomainParser();
+		fileIO = new FileIO(domainCompanyPath, domainLookupPath, exceptionDomainPath);
 		// Incremental check: Check if the domain already processed before
-		INCREMENTAL_EXTRACTION = checkProcessBefore(domainComapnyPath);
+		INCREMENTAL_EXTRACTION = fileIO.checkProcessBefore();
 
 		domainKnownMap = new HashMap<String, String>();
 		// Prepare the domains want to check
 		domainCheckingSet = new HashSet<String>();
-		domainCheckingSet = readDomain(domainLookupPath);
+		exceptionDomainSet = new HashSet<String>();
+		domainCheckingSet = fileIO.readAsSortedSet();
 
 		if (INCREMENTAL_EXTRACTION) {
-			domainKnownMap = readDomainKnown(domainComapnyPath);
-			exceptionDomainSet = readDomain(exceptionDomainPath);
+			domainKnownMap = fileIO.readDomainKnown();
+			exceptionDomainSet = fileIO.readAsSet();
 			domainCheckingSet.removeAll(domainKnownMap.keySet());
 			domainCheckingSet.removeAll(exceptionDomainSet);
 		}
 
-		System.out.println("domains lookup: " + domainCheckingSet.size()
-				+ " takes " + (int) domainCheckingSet.size() * 2 * WHOISdelay
-				/ 6000 + " minutes maximum");
+		System.out.println("domains lookup: " + domainCheckingSet.size() + " takes " + (int) domainCheckingSet.size() * 2 * WHOISdelay / 6000
+				+ " minutes maximum");
 
 		domainCompanyMap = new HashMap<String, String>();
 
-		for (String domain : domainCheckingSet) {			
+		for (String domain : domainCheckingSet) {
 			// Whois query needs top domain
 			// If not topDomain, using top domain get WHOIS data
-			String topDomain = InternetDomainName.from(domain)
-					.topPrivateDomain().toString();
+			String topDomain = domainParser.whoisDomain(domain);
 
-			String tld = domain.substring(domain.lastIndexOf(".") + 1).trim()
-					.toLowerCase();
+			String tld = domainParser.getTLD(topDomain);
 
 			// Possibly it's already known
 			if (!topDomain.equalsIgnoreCase(domain)) {
@@ -134,17 +149,16 @@ public class CrawlWHOIS {
 			// If it's a ccTLD, check if it contains symbol (ex.
 			// amazon.jp, google.fr), the length is 2
 			else if (tld.length() < 3) {
-				String checkingSymbol = domain.split("\\.")[0];
+				String checkingSymbol = domainParser.getSymbol(domain);
 
-				Iterator<Entry<String, String>> iterator = domainKnownMap
-						.entrySet().iterator();
+				Iterator<Entry<String, String>> iterator = domainKnownMap.entrySet().iterator();
 
 				while (iterator.hasNext()) {
 					Entry<String, String> currentEntry = iterator.next();
 					String domainKnown = currentEntry.getKey();
 					String companyKnown = currentEntry.getValue();
 
-					String knownSymbols = domainKnown.split("\\.")[0];
+					String knownSymbols = domainParser.getSymbol(domainKnown);
 
 					if (knownSymbols.equalsIgnoreCase(checkingSymbol))
 						domainCompanyMap.put(domain, companyKnown);
@@ -153,19 +167,18 @@ public class CrawlWHOIS {
 
 			// Start WHOIS
 			else {
-				WHOISCompanyLookup whoisICANN = new WHOISCompanyLookup();
+				WhoisParser whoisParser = new WhoisParser();
 				exceptionDomainSet = new HashSet<String>();
 
 				// If lookup takes too long, it's mainly due to connection
 				// refused or irregular whois response,
 				// so kill this lookup and continue to the next lookup
-				final ExecutorService executorService = Executors
-						.newSingleThreadExecutor();
+				final ExecutorService executorService = Executors.newSingleThreadExecutor();
 				Future<?> future = null;
 				try {
 					future = executorService.submit(() -> {
 						try {
-							company = whoisICANN.getWHOIS(topDomain);
+							company = whoisParser.getCompany(topDomain);
 						} catch (Exception e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -184,10 +197,8 @@ public class CrawlWHOIS {
 				// Write the result if cannot get the company
 				else {
 					exceptionDomainSet.add(domain);
-					writeCheckedDomainToDisk(domainCompanyMap,
-							domainComapnyPath);
-					writeExceptionDomainToDisk(exceptionDomainSet,
-							exceptionDomainPath);
+					fileIO.writeCheckedDomainToDisk(domainCompanyMap);
+					FileIO.writeExceptionDomainToDisk(exceptionDomainSet);
 					System.out.println("Writting...");
 
 					domainCompanyMap.clear();
@@ -199,100 +210,7 @@ public class CrawlWHOIS {
 			}
 		}
 
-		writeCheckedDomainToDisk(domainCompanyMap, domainComapnyPath);
+		fileIO.writeCheckedDomainToDisk(domainCompanyMap);
 		System.out.println("End WHOIS Extraction");
-	}
-
-	// Write the result to disk
-	public static void writeExceptionDomainToDisk(
-			HashSet<String> excetptionDomainSet, String fileOutputPath)
-			throws IOException {
-
-		FileWriter fileWriter = new FileWriter(fileOutputPath, true);
-		BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-		Iterator<String> iterator = excetptionDomainSet.iterator();
-
-		while (iterator.hasNext()) {
-			String entry = iterator.next();
-			bufferedWriter.write(entry + "\n");
-		}
-
-		bufferedWriter.close();
-		fileWriter.close();
-	}
-
-	// Check if the output file already exist
-	private static boolean checkProcessBefore(String knownDomainFilePath) {
-		File domainknownFile = new File(knownDomainFilePath);
-		if (domainknownFile.exists())
-			return true;
-		else
-			return false;
-	}
-
-	// Prepare the domains already checked
-	public static HashMap<String, String> readDomainKnown(
-			String knownDomainFilePath) throws IOException {
-
-		HashMap<String, String> domainKnownMap = new HashMap<String, String>();
-		fileReader = new FileReader(knownDomainFilePath);
-		bufferedReader = new BufferedReader(fileReader);
-		String line = bufferedReader.readLine();
-
-		while (line != null) {
-			String[] domainAndCompany = line.split(",");
-			String domainKnown = domainAndCompany[0];
-			String company = domainAndCompany[1];
-			if (!company.equalsIgnoreCase("null"))
-				domainKnownMap.put(domainKnown, company);
-			line = bufferedReader.readLine();
-		}
-
-		bufferedReader.close();
-		fileReader.close();
-
-		return domainKnownMap;
-	}
-
-	// Read domain into a set
-	public static HashSet<String> readDomain(String domainCheckingFilePath)
-			throws IOException {
-
-		HashSet<String> domainCheckingSet = new HashSet<String>();
-		fileReader = new FileReader(domainCheckingFilePath);
-		bufferedReader = new BufferedReader(fileReader);
-		String line = bufferedReader.readLine();
-
-		while (line != null) {
-			domainCheckingSet.add(line);
-			line = bufferedReader.readLine();
-		}
-
-		bufferedReader.close();
-		fileReader.close();
-
-		return domainCheckingSet;
-	}
-
-	// Write the result to disk
-	public static void writeCheckedDomainToDisk(
-			HashMap<String, String> domainCompanyMap, String fileOutputPath)
-			throws IOException {
-
-		FileWriter fileWriter = new FileWriter(fileOutputPath, true);
-
-		BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-
-		Iterator<Entry<String, String>> iterator = domainCompanyMap.entrySet()
-				.iterator();
-
-		while (iterator.hasNext()) {
-			Entry<String, String> entry = iterator.next();
-			bufferedWriter
-					.write(entry.getKey() + "," + entry.getValue() + "\n");
-		}
-
-		bufferedWriter.close();
-		fileWriter.close();
 	}
 }

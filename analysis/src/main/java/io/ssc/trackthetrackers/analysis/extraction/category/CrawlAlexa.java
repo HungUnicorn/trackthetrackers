@@ -1,4 +1,4 @@
-package io.ssc.trackthetrackers.analysis.publisher.category;
+package io.ssc.trackthetrackers.analysis.extraction.category;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;

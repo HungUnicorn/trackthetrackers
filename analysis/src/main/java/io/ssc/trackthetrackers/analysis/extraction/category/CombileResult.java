@@ -1,4 +1,4 @@
-package io.ssc.trackthetrackers.analysis.publisher.category;
+package io.ssc.trackthetrackers.analysis.extraction.category;
 
 import io.ssc.trackthetrackers.Config;
 
@@ -17,7 +17,7 @@ public class CombileResult {
 			.get("analysis.results.path") + "SiteCategory" + "/";
 
 	private static String argPathOut = Config.get("analysis.results.path")
-			+ "SiteCategory" + "/" + "allCategorySites";
+			+ "allCategorySites";
 
 	public static void main(String[] args) throws Exception {
 		ArrayList<String> siteList = new ArrayList<String>();

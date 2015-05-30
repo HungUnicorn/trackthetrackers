@@ -1,4 +1,4 @@
-package io.ssc.trackthetrackers.analysis.publisher.category;
+package io.ssc.trackthetrackers.analysis.extraction.category;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -14,6 +14,7 @@ import org.jsoup.select.Elements;
 
 // Parse HTML of top category website in Alexa
 // View Https://mail.google.com/ Https://docs.google.com/ as one google.com 
+// The amount of information is already contained in web traffic
 public class AlexaTopCategorySite {
 
 	private static AlexaTopCategorySite instance = new AlexaTopCategorySite();
