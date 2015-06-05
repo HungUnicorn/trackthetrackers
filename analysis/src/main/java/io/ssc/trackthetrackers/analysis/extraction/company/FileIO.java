@@ -1,5 +1,7 @@
 package io.ssc.trackthetrackers.analysis.extraction.company;
 
+import io.ssc.trackthetrackers.analysis.extraction.DomainParser;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,6 +25,14 @@ public class FileIO {
 
 	private String domainCompanyPath, domainLookupParth;
 	private static String exceptionDomationPath;
+
+	public FileIO() {
+	}
+
+	public FileIO(String domainComapanyPath, String domainLookupPath) {
+		this.domainCompanyPath = domainComapanyPath;
+		this.domainLookupParth = domainLookupPath;
+	}
 
 	public FileIO(String domainComapanyPath, String domainLookupPath, String exceptionDomainPath) {
 		this.domainCompanyPath = domainComapanyPath;
@@ -78,6 +88,32 @@ public class FileIO {
 		return domainKnownMap;
 	}
 
+	// Prepare the domains already checked
+	public HashMap<String, String> readCleanCompany() throws IOException {
+		DomainParser domainParser = new DomainParser();
+		HashMap<String, String> domainKnownMap = new HashMap<String, String>();
+		FileReader fileReader = new FileReader(domainCompanyPath);
+		BufferedReader bufferedReader = new BufferedReader(fileReader);
+		String line = bufferedReader.readLine();
+
+		while (line != null) {
+			String[] domainAndCompany = line.split(",");
+			String domainKnown = domainAndCompany[0];
+			String company = domainAndCompany[1];
+			if (!company.isEmpty()) {
+				if (domainParser.isCompany(company)) {
+					domainKnownMap.put(domainKnown, company);
+				}
+			}
+			line = bufferedReader.readLine();
+		}
+
+		bufferedReader.close();
+		fileReader.close();
+
+		return domainKnownMap;
+	}
+
 	// Read domain into a map descending sorted on the value and return a sorted
 	// set
 	public Set<String> readAsSortedSet() throws IOException {
@@ -88,7 +124,7 @@ public class FileIO {
 		HashMap<String, Double> map = new HashMap<String, Double>();
 
 		Pattern SEPARATOR = Pattern.compile("[ \t,]");
-		
+
 		String line = bufferedReader.readLine();
 		while (line != null) {
 
@@ -103,7 +139,7 @@ public class FileIO {
 
 		map = (HashMap<String, Double>) sortByValueDesc(map);
 		Set<String> sortedset = map.keySet();
-
+		System.out.println("Size of reading set " + sortedset.size());
 		return sortedset;
 	}
 
@@ -121,7 +157,26 @@ public class FileIO {
 		}
 		bufferedReader.close();
 		fileReader.close();
+		return set;
+	}
 
+	public Set<String> readIndex() throws IOException {
+
+		FileReader fileReader = new FileReader(domainLookupParth);
+		BufferedReader bufferedReader = new BufferedReader(fileReader);
+		Set<String> set = new HashSet<String>();
+
+		Pattern SEPARATOR = Pattern.compile("[ \t,]");
+		String line = bufferedReader.readLine();
+
+		while (line != null) {
+			String tokens[] = SEPARATOR.split(line);
+			set.add(tokens[0]);
+			line = bufferedReader.readLine();
+		}
+		bufferedReader.close();
+		fileReader.close();
+		System.out.println("Size of reading set " + set.size());
 		return set;
 	}
 
@@ -143,7 +198,25 @@ public class FileIO {
 		fileWriter.close();
 	}
 
-	public <K, V extends Comparable<? super V>> Map<K, V> sortByValueDesc(Map<K, V> map) {
+	// Write the result to disk
+	public void writeWhoisAnalysis(Map<Integer, Integer> map, String filePath) throws IOException {
+
+		FileWriter fileWriter = new FileWriter(filePath);
+
+		BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+		Iterator<Entry<Integer, Integer>> iterator = map.entrySet().iterator();
+
+		while (iterator.hasNext()) {
+			Entry<Integer, Integer> entry = iterator.next();
+			bufferedWriter.write(entry.getKey() + "," + entry.getValue() + "\n");
+		}
+
+		bufferedWriter.close();
+		fileWriter.close();
+	}
+
+	private <K, V extends Comparable<? super V>> Map<K, V> sortByValueDesc(Map<K, V> map) {
 		List<Map.Entry<K, V>> list = new LinkedList<>(map.entrySet());
 		Collections.sort(list, new Comparator<Map.Entry<K, V>>() {
 			@Override

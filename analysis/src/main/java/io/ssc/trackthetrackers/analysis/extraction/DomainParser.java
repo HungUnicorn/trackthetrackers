@@ -43,7 +43,8 @@ public class DomainParser {
 
 		String tokens[] = SEPARATOR.split(site);
 
-		// skip aaaa.co.jp and and handle font.googleapis.com, Games.yahoo.com->
+		// Ignore aaaa.co.jp and and handle font.googleapis.com,
+		// Games.yahoo.com->
 		// yahoo.com
 		if (!site.contains("www") && tokens.length > 2 && tokens[1].length() > 2) {
 			// skip token[0]
@@ -69,4 +70,29 @@ public class DomainParser {
 		return domain.split("\\.")[0];
 	}
 
+	// Refer to http://en.wikipedia.org/wiki/List_of_Internet_top-level_domains
+	public boolean isCCTLD(String tld) {
+		if (!tld.equalsIgnoreCase("gov") && !tld.equalsIgnoreCase("net") && !tld.equalsIgnoreCase("com") && !tld.equalsIgnoreCase("org")
+				&& !tld.equalsIgnoreCase("edu") && !tld.equalsIgnoreCase("mil")) {
+			return true;
+		} else {
+			return false;
+		}
+
+	}
+
+	public boolean isCompany(String company) {
+		if (company != null) {
+			if (company.length() > 1 && !company.toLowerCase().contains("privacy") && !company.toLowerCase().contains("proxy")
+					&& !company.toLowerCase().contains("whois")) {
+				return true;
+			}
+		}
+		return false;
+
+	}
+
+	public boolean isBusinessDomain(String tld) {
+		return !tld.equalsIgnoreCase("mil") && !tld.equalsIgnoreCase("edu") && !tld.equalsIgnoreCase("gov");
+	}
 }

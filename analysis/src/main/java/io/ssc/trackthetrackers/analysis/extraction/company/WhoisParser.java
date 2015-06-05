@@ -65,7 +65,48 @@ public class WhoisParser {
 		while (lineTokenizer.hasMoreTokens()) {
 			String line = lineTokenizer.nextToken();
 
-			if (line.contains("Admin Organization")) {
+			if (line.contains("Admin Organization:")) {
+				organizationLine = line;
+				StringTokenizer colonTokenizer = new StringTokenizer(organizationLine, ":");
+				colonTokenizer.nextToken();
+				adminOrg = colonTokenizer.nextToken().trim();
+			}
+		}
+		return adminOrg;
+	}
+
+	private String parseOrgOfDomain(String whoisResult) {
+		String adminOrg = null;
+		String organizationLine = null;
+		StringTokenizer lineTokenizer = new StringTokenizer(whoisResult.toString(), "\n");
+
+		while (lineTokenizer.hasMoreTokens()) {
+			String line = lineTokenizer.nextToken();
+
+			// English, de, ru
+			if (line.contains("Organization:") || line.contains("Organisation:") || line.contains("org:")) {
+				if(!line.contains("Tech Organization:")){
+				organizationLine = line;
+				StringTokenizer colonTokenizer = new StringTokenizer(organizationLine, ":");
+				colonTokenizer.nextToken();
+				adminOrg = colonTokenizer.nextToken().trim();
+				}
+			}
+		}
+		return adminOrg;
+	}
+
+	// Find the line in the raw text of WHOIS which is
+	// Registrant Organization
+	private String parseRegistrantOrg(String whoisResult) {
+		String adminOrg = null;
+		String organizationLine = null;
+		StringTokenizer lineTokenizer = new StringTokenizer(whoisResult.toString(), "\n");
+
+		while (lineTokenizer.hasMoreTokens()) {
+			String line = lineTokenizer.nextToken();
+
+			if (line.contains("Registrant Organization:")) {
 				organizationLine = line;
 				StringTokenizer colonTokenizer = new StringTokenizer(organizationLine, ":");
 				colonTokenizer.nextToken();
@@ -77,6 +118,7 @@ public class WhoisParser {
 
 	public String getCompany(String host) throws Exception {
 
+		String adminOrg = null;
 		// Get the address of the authoritative Whois server from IANA
 		WhoisClient whoisClient = new WhoisClient();
 		whoisClient.connect(IANA_WHOIS_SERVER, WHOIS_PORT);
@@ -107,7 +149,7 @@ public class WhoisParser {
 		// so it becomes
 		// 'whois -h whois.markmonitor.com google.com'
 		// to get the WHOIS data.
-		// (like for google.com, apple.com. yahoo.com, microsoft.com etc.)
+		// (like google.com, apple.com. yahoo.com, microsoft.com etc.)
 		if ("com".equals(tld)) {
 			tmpStr = whoisClient.query("domain " + host);
 			result.append(tmpStr);
@@ -133,17 +175,33 @@ public class WhoisParser {
 			tmpStr = whoisClient.query(host);
 			result.append(tmpStr);
 			whoisClient.disconnect();
-			// printResults(actualServer, tmpStr);
-		}
-		// System.out.println(result.toString());
-		String adminOrg = parseAdminOrgOfDomain(result.toString());
 
-		// Irregular response or the organization information is hidden
-		// (Admin: and Admin:null)
-		if (adminOrg == null || adminOrg.isEmpty() || adminOrg.equalsIgnoreCase("null") || adminOrg.equalsIgnoreCase(",")) {
-			// printResults(actualServer, tmpStr);
-			return "N/A";
 		}
+
+		// First priority
+		adminOrg = parseAdminOrgOfDomain(result.toString());
+
+		// 2nd priority
+		// Irregular response or the organization information is hidden, get the
+		// Organization
+		/*if (adminOrg == null || adminOrg.length() < 3 || adminOrg.equalsIgnoreCase("null")) {
+			adminOrg = parseOrgOfDomain(result.toString());
+
+		}*/
+
+		// 3rd priority
+		// Irregular response or the organization information is hidden, get the
+		// Registrant
+		if (adminOrg == null || adminOrg.length() < 2 || adminOrg.equalsIgnoreCase("null")) {
+			adminOrg = parseRegistrantOrg(result.toString());
+
+		}
+
+		// If the information is still undiscovered
+		if (adminOrg == null || adminOrg.length() < 2 || adminOrg.equalsIgnoreCase("null")) {
+			adminOrg = "N/A";
+		}
+
 		return adminOrg;
 	}
 

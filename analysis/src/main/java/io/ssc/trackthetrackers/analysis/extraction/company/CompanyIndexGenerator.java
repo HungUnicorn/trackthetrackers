@@ -1,6 +1,7 @@
-package io.ssc.trackthetrackers.analysis.etl;
+package io.ssc.trackthetrackers.analysis.extraction.company;
 
 import io.ssc.trackthetrackers.Config;
+import io.ssc.trackthetrackers.analysis.extraction.DomainParser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -28,6 +29,8 @@ public class CompanyIndexGenerator {
 
 	public static Set<String> readCompany(String filePath) throws IOException {
 
+		DomainParser domainParser = new DomainParser();
+		
 		HashSet<String> companySet = new HashSet<String>();
 		FileReader fileReader = new FileReader(argPathToDomainCompany);
 		String line;
@@ -37,8 +40,7 @@ public class CompanyIndexGenerator {
 		while ((line = bufferedReader.readLine()) != null) {
 			String[] tokens = SEPARATOR.split(line);
 			String company = tokens[1];
-			if (company.length() > 1 && !company.toLowerCase().contains("privacy")
-					&& !company.toLowerCase().contains("proxy")) {
+			if (domainParser.isCompany(company)) {
 				companySet.add(company);
 			}
 
