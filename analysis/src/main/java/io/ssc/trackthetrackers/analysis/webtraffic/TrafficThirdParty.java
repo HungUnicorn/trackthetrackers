@@ -37,12 +37,13 @@ import org.apache.flink.util.Collector;
 // Get the aggregated Centrality distritbution
 public class TrafficThirdParty {
 
-	private static String argPathToNodesAndValues = Config.get("webdatacommons.hostgraph-pr.unzipped");
+	private static String argPathToNodesAndValues = "/home/sendoh/Downloads/hostgraph-h.tsv";
+	
 	private static String argPathToPLD = Config.get("webdatacommons.pldfile.unzipped");
 	// private static String argPathToTrackingArcs =
 	// Config.get("analysis.results.path") + "filterNonBusinessArc";
 	private static String argPathToTrackingArcs = Config.get("analysis.results.path") + "filterDotComArc";
-	private static String argPathOut = Config.get("analysis.results.path") + "trafficDotComArc";
+	private static String argPathOut = Config.get("analysis.results.path") + "trafficDotComArc(Closeness)";
 
 	public static void main(String args[]) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();

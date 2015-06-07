@@ -11,72 +11,37 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import io.ssc.trackthetrackers.Config;
-import io.ssc.trackthetrackers.analysis.extraction.DomainParser;
+import io.ssc.trackthetrackers.analysis.DomainParser;
 
-public class Analysis {
+public class WhoisAnalysis {
 
 	private static String domainCompanyPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/domainCompanyMapping";
-	private static String domainLookupPath = Config.get("analysis.results.path") + "topTrafficThirdParty";
-	private static String whoisAnalysisPath = Config.get("analysis.results.path") + "whoisAnalysis.csv";
+	private static String domainLookupPath = Config.get("analysis.results.path") + "topTrafficThirdParty(Closeness)";
+	private static String companyRepeatAmountPath = Config.get("analysis.results.path") + "companyRepeatAmount(Closeness).csv";
+	private static String companyAmountPath = Config.get("analysis.results.path") + "companyAmount.csv";
+	private static String companyStrictAmountPath = Config.get("analysis.results.path") + "companyStrictAmount(Closeness).csv";
 
 	private static int interval = 100;
+	private static int maxLimit = 11800;
 
 	public static void main(String args[]) throws IOException {
-		
-		//crawlProcess();
+
+		//crawlProcess("uguisudani-fujius.com");
 		companyRepeatAmount();
+		crawlCompanyStrictAmount();
 	}
 
-	public static void companyRepeatAmount() throws IOException {
-		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
-		DomainParser domainParser = new DomainParser();
-
-		Set<String> lookupSortedSet = new HashSet<String>();
-		Map<String, String> domainCompanyMap = new HashMap<String, String>();
-		lookupSortedSet = fileIO.readAsSortedSet();
-		domainCompanyMap = fileIO.readCleanCompany();
-
-		int repeat = 0;
-		int order = 0;
-		Set<String> knownCompanySet = new HashSet<String>();
-		Map<Integer, Integer> SameCompanyCountInterval = new TreeMap<Integer, Integer>();
-
-		// Show how many repeat companies in the interval
-		for (String domain : lookupSortedSet) {
-			String company = domainCompanyMap.get(domain);
-
-			if (knownCompanySet.contains(company) && domainParser.isCompany(company)) {
-				// System.out.println(domain + "," + company);
-				repeat++;
-			} else {
-				knownCompanySet.add(company);
-			}
-
-			order++;
-
-			if (order % interval == 0) {
-				SameCompanyCountInterval.put(order, repeat);
-
-			}
-			if (order > 29000) {
-				break;
-			}
-		}
-		fileIO.writeWhoisAnalysis(SameCompanyCountInterval, whoisAnalysisPath);
-	}
-
-	// Amount of crawl at each interval
-	public static void crawlAmount() throws IOException {
+	// Amount of crawl at each interval for Inc. and Coporation
+	public static void crawlCompanyStrictAmount() throws IOException {
 		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
 		Set<String> lookupSortedSet = new HashSet<String>();
 		Map<String, String> domainCompanyMap = new HashMap<String, String>();
 		Map<Integer, Integer> intervalMap = new TreeMap<Integer, Integer>();
 
-		lookupSortedSet = fileIO.readAsSortedSet();
+		lookupSortedSet = fileIO.readAsSortedByValueDescSet();
 		domainCompanyMap = fileIO.readDomainKnown();
-		DomainParser domainParser = new DomainParser();
 
-		int maxOrder = crawlProcess();
+		// int maxOrder = crawlProcess();
 
 		int numMeaningfulResult = 0;
 		int order = 0;
@@ -108,14 +73,108 @@ public class Analysis {
 
 			String company = domainCompanyMap.get(entry);
 			if (company != null) {
-				if (domainParser.isCompany(company)) {
+				if (DomainParser.isCompanyStrict(company)) {
 					numMeaningfulResult++;
 				}
 			}
+			
+			order++;
+			if (order % interval == 0) {
+				intervalMap.put(order, numMeaningfulResult);
+				// System.out.println(order + "," + numMeaningfulResult);
+			}
 
-			// See the top 100
-			if ((company == null || !domainParser.isCompany(company)) && order < 101) {
-				System.out.println(entry);
+			// Crawl progress
+			if (order > maxLimit) {
+				break;
+			}
+
+		}
+		incresingNumberInInterval(intervalMap, companyStrictAmountPath);
+	}
+
+	public static void companyRepeatAmount() throws IOException {
+		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
+
+		Set<String> lookupSortedSet = new HashSet<String>();
+		Map<String, String> domainCompanyMap = new HashMap<String, String>();
+		lookupSortedSet = fileIO.readAsSortedByValueDescSet();
+		domainCompanyMap = fileIO.readCleanCompany();
+
+		int repeat = 0;
+		int order = 0;
+		Set<String> knownCompanySet = new HashSet<String>();
+		Map<Integer, Integer> SameCompanyCountInterval = new TreeMap<Integer, Integer>();
+
+		// Show how many repeat companies in the interval
+		for (String domain : lookupSortedSet) {
+			String company = domainCompanyMap.get(domain);
+
+			if (knownCompanySet.contains(company) && DomainParser.isCompany(company)) {
+				// System.out.println(domain + "," + company);
+				repeat++;
+			} else {
+				knownCompanySet.add(company);
+			}
+
+			order++;
+
+			if (order % interval == 0) {
+				SameCompanyCountInterval.put(order, repeat);
+
+			}
+			if (order > maxLimit) {
+				break;
+			}
+		}
+		fileIO.writeWhoisAnalysis(SameCompanyCountInterval, companyRepeatAmountPath);
+	}
+
+	// Amount of crawl at each interval
+	public static void crawlCompanyAmount() throws IOException {
+		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
+		Set<String> lookupSortedSet = new HashSet<String>();
+		Map<String, String> domainCompanyMap = new HashMap<String, String>();
+		Map<Integer, Integer> intervalMap = new TreeMap<Integer, Integer>();
+
+		lookupSortedSet = fileIO.readAsSortedByValueDescSet();
+		domainCompanyMap = fileIO.readDomainKnown();
+
+		// int maxOrder = crawlProcess();
+
+		int numMeaningfulResult = 0;
+		int order = 0;
+		System.out.println("--------------");
+		System.out.println("Top, MeaningfulResult");
+
+		// (Interval, number of meaningful result)
+		for (String entry : lookupSortedSet) {
+
+			// Ignore the domain name for example, .com, .gov
+			Pattern SEPARATOR = Pattern.compile("[.]");
+			String tokens[] = SEPARATOR.split(entry);
+
+			if (tokens.length < 2) {
+				break;
+			}
+
+			String tld = tokens[tokens.length - 1];
+			String potentialTld = tokens[tokens.length - 2];
+
+			// TLD
+			if (tld.equalsIgnoreCase("gov") || tld.equalsIgnoreCase("edu") || tld.equalsIgnoreCase("mil")) {
+				// ccTLD e.g. aa.gov.tw
+				if (potentialTld.equalsIgnoreCase("gov") || potentialTld.equalsIgnoreCase("edu") || potentialTld.equalsIgnoreCase("mil")) {
+					break;
+
+				}
+			}
+
+			String company = domainCompanyMap.get(entry);
+			if (company != null) {
+				if (DomainParser.isCompany(company)) {
+					numMeaningfulResult++;
+				}
 			}
 
 			order++;
@@ -125,18 +184,18 @@ public class Analysis {
 			}
 
 			// Crawl progress
-			if (order > 40000) {
+			if (order > maxLimit) {
 				break;
 			}
 
 		}
-		incresingNumberInInterval(intervalMap);
+		incresingNumberInInterval(intervalMap, companyAmountPath);
 	}
 
 	// (Interval, increasing number of meaningful result)
 	// increasing number of meaningful result = number of meaningful result
 	// in top 200 - number of meaningful result in top 100
-	private static void incresingNumberInInterval(Map<Integer, Integer> intervalMap) throws IOException {
+	private static void incresingNumberInInterval(Map<Integer, Integer> intervalMap, String filePath) throws IOException {
 		FileIO fileIO = new FileIO();
 		Map<Integer, Integer> incresingNumberInInterval = new TreeMap<Integer, Integer>();
 		Iterator<Entry<Integer, Integer>> iterator = intervalMap.entrySet().iterator();
@@ -160,19 +219,20 @@ public class Analysis {
 			}
 		}
 
-		fileIO.writeWhoisAnalysis(incresingNumberInInterval, whoisAnalysisPath);
+		fileIO.writeWhoisAnalysis(incresingNumberInInterval, filePath);
 	}
 
-	// The current crawl progress. Put the last entry in domain company mapping file
-	private static int crawlProcess() throws IOException {
+	// The current crawl progress. Put the last entry in domain company mapping
+	// file
+	private static int crawlProcess(String domain) throws IOException {
 		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
 		Set<String> lookupSortedSet = new HashSet<String>();
-		lookupSortedSet = fileIO.readAsSortedSet();
+		lookupSortedSet = fileIO.readAsSortedByValueDescSet();
 		int maxOrder = 0;
-		
+
 		for (String entry : lookupSortedSet) {
 			maxOrder++;
-			if (entry.equalsIgnoreCase("osoyou.com")) {
+			if (entry.equalsIgnoreCase(domain)) {
 				break;
 			}
 		}

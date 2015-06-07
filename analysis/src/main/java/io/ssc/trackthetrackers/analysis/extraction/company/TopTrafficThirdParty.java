@@ -37,10 +37,10 @@ import org.apache.flink.util.Collector;
 // Get the top K third party.
 public class TopTrafficThirdParty {
 
-	private static String argPathtrafficDistributionThirdParty = Config.get("analysis.results.path") + "trafficDotComArc";	
+	private static String argPathtrafficDistributionThirdParty = Config.get("analysis.results.path") + "trafficDotComArc(Closeness)";	
 	private static String argPathToThirdPartyIndex = Config.get("analysis.results.path") + "thirdPartyIndex";
 
-	private static String argPathOut = Config.get("analysis.results.path") + "topTrafficThirdParty";
+	private static String argPathOut = Config.get("analysis.results.path") + "topTrafficThirdParty(Closeness)";
 
 	private static int topK = 100000;
 
@@ -92,7 +92,7 @@ public class TopTrafficThirdParty {
 
 		@Override
 		public boolean filter(Tuple2<Long, Double> arcWithValue) throws Exception {
-			return arcWithValue.f1 > 0.00001;
+			return arcWithValue.f1 > 1000;
 		}
 	}
 
