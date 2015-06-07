@@ -1,7 +1,7 @@
 package io.ssc.trackthetrackers.analysis.extraction.company;
 
 import io.ssc.trackthetrackers.Config;
-import io.ssc.trackthetrackers.analysis.extraction.DomainParser;
+import io.ssc.trackthetrackers.analysis.DomainParser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,10 +15,10 @@ import java.util.regex.Pattern;
 
 // Give surrogate key for company
 public class CompanyIndexGenerator {
-	private static String argPathToDomainCompany = "/home/sendoh/trackthetrackers/analysis/src/resources/company/DomainAndCompany.csv";
+	private static String argPathToDomainCompany = "/home/sendoh/trackthetrackers/analysis/src/resources/company/domainCompanyMapping";
 
 	private static String argPathOut = Config.get("analysis.results.path")
-			+ "companyWithIndex";
+			+ "companyIndex.tsv";
 
 	public static void main(String[] args) throws Exception {
 		Set<String> companySet = new HashSet<String>();
@@ -28,19 +28,16 @@ public class CompanyIndexGenerator {
 	}
 
 	public static Set<String> readCompany(String filePath) throws IOException {
-
-		DomainParser domainParser = new DomainParser();
 		
 		HashSet<String> companySet = new HashSet<String>();
 		FileReader fileReader = new FileReader(argPathToDomainCompany);
 		String line;
-		Pattern SEPARATOR = Pattern.compile("[\t,]");
+		
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 
-		while ((line = bufferedReader.readLine()) != null) {
-			String[] tokens = SEPARATOR.split(line);
-			String company = tokens[1];
-			if (domainParser.isCompany(company)) {
+		while ((line = bufferedReader.readLine()) != null) {			
+			String company = line.substring(line.indexOf(",") + 1).trim();
+			if (DomainParser.isCompanyStrict(company)) {
 				companySet.add(company);
 			}
 
@@ -58,14 +55,14 @@ public class CompanyIndexGenerator {
 		BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 
 		int key = 0;
-		bufferedWriter.write("NotInWHOis" + "," + key);
+		bufferedWriter.write("NotInWHOis" + "\t" + key);
 		bufferedWriter.newLine();
 		key++;
 
 		Iterator<String> iterator = companySet.iterator();
 		while (iterator.hasNext()) {
 			String company = iterator.next();
-			bufferedWriter.write(company + "," + key);
+			bufferedWriter.write(company + "\t" + key);
 			bufferedWriter.newLine();
 			key++;
 		}

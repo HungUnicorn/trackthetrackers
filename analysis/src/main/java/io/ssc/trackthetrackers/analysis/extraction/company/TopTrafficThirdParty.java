@@ -48,7 +48,7 @@ public class TopTrafficThirdParty {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();		
 
 		// Convert the input as (nodeName, value)
-		DataSet<Tuple2<Long, Double>> trackerIDAndValue = ReaderUtils.readDistribution(env, argPathtrafficDistributionThirdParty);		
+		DataSet<Tuple2<Long, Double>> trackerIDAndValue = ReaderUtils.readLongAndValue(env, argPathtrafficDistributionThirdParty);		
 
 		DataSet<Tuple2<Long, Double>> filterIDAndValue = trackerIDAndValue.filter(new ValueFilter());
 		// Output 1, ID, value
@@ -57,7 +57,7 @@ public class TopTrafficThirdParty {
 		// Get topK
 		DataSet<Tuple3<Long, Long, Double>> topKReducer = topKMapper.groupBy(0).sortGroup(2, Order.DESCENDING).first(topK);
 
-		DataSet<Tuple2<String, Long>> thirdPartyIndex = ReaderUtils.readPldIndex(env, argPathToThirdPartyIndex);
+		DataSet<Tuple2<String, Long>> thirdPartyIndex = ReaderUtils.readNameAndId(env, argPathToThirdPartyIndex);
 
 		DataSet<Tuple2<String, Long>> filterThirdPartyIndex = thirdPartyIndex.filter(new IndexDomainFilter());
 

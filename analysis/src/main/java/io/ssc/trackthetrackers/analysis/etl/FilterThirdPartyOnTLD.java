@@ -27,7 +27,7 @@ public class FilterThirdPartyOnTLD {
 
 		DataSet<Tuple2<Long, Long>> arcs = ReaderUtils.readArcs(env, argPathTrackingArc);
 
-		DataSet<Tuple2<String, Long>> index = ReaderUtils.readPldIndex(env, argPathIndex);
+		DataSet<Tuple2<String, Long>> index = ReaderUtils.readNameAndId(env, argPathIndex);
 
 		DataSet<Tuple2<String, Long>> arcsWithThirdPartyName = arcs.join(index).where(0).equalTo(1).projectSecond(0).projectFirst(1);
 

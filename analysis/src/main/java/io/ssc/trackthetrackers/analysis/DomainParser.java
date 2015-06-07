@@ -1,4 +1,4 @@
-package io.ssc.trackthetrackers.analysis.extraction;
+package io.ssc.trackthetrackers.analysis;
 
 import java.util.regex.Pattern;
 
@@ -7,7 +7,7 @@ import org.apache.flink.shaded.com.google.common.net.InternetDomainName;
 // get the clean domain which topPrivateDomain() can recognize  
 public class DomainParser {
 
-	public String alexaDomain(String site) {
+	public static String alexaDomain(String site) {
 		String topDomain = null;
 
 		if (!site.contains("/") && !site.contains("Http") && !site.contains("www")) {
@@ -36,7 +36,7 @@ public class DomainParser {
 		return topDomain;
 	}
 
-	public String whoisDomain(String site) {
+	public static String whoisDomain(String site) {
 		String topDomain = null;
 
 		final Pattern SEPARATOR = Pattern.compile("[.]");
@@ -58,20 +58,20 @@ public class DomainParser {
 		return topDomain;
 	}
 
-	public String getTLD(String domain) {
+	public static String getTLD(String domain) {
 
 		return domain.substring(domain.lastIndexOf(".") + 1).trim().toLowerCase();
 	}
 
 	// If it's a ccTLD, check if it contains symbol (ex.
 	// amazon.jp, google.fr), the length is 2
-	public String getSymbol(String domain) {
+	public static String getSymbol(String domain) {
 
 		return domain.split("\\.")[0];
 	}
 
 	// Refer to http://en.wikipedia.org/wiki/List_of_Internet_top-level_domains
-	public boolean isCCTLD(String tld) {
+	public static boolean isCCTLD(String tld) {
 		if (!tld.equalsIgnoreCase("gov") && !tld.equalsIgnoreCase("net") && !tld.equalsIgnoreCase("com") && !tld.equalsIgnoreCase("org")
 				&& !tld.equalsIgnoreCase("edu") && !tld.equalsIgnoreCase("mil")) {
 			return true;
@@ -81,10 +81,12 @@ public class DomainParser {
 
 	}
 
-	public boolean isCompany(String company) {
+	// The company name is hidden
+	public static boolean isCompany(String company) {
 		if (company != null) {
-			if (company.length() > 1 && !company.toLowerCase().contains("privacy") && !company.toLowerCase().contains("proxy")
-					&& !company.toLowerCase().contains("whois")) {
+			if (company.length() > 2 && !company.toLowerCase().contains("privacy") && !company.toLowerCase().contains("proxy")
+					&& !company.toLowerCase().contains("whois") && !company.toLowerCase().contains("a happy dreamhost customer")
+					&& !company.toLowerCase().contains("1&1 internet")) {
 				return true;
 			}
 		}
@@ -92,7 +94,41 @@ public class DomainParser {
 
 	}
 
-	public boolean isBusinessDomain(String tld) {
+	// The company name is hidden
+	public static boolean isCompanyStrict(String company) {
+		if (company != null) {
+			if (isCompany(company)) {
+				if (isCoporation(company) || isInc(company) || isLtd(company)) {
+					return true;
+				}
+			}
+		}
+		return false;
+
+	}
+
+	public static boolean isCoporation(String company) {
+		if (company.toLowerCase().contains("corporation")) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean isInc(String company) {
+		if (company.toLowerCase().contains("inc")) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean isLtd(String company) {
+		if (company.toLowerCase().contains("ltd")) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean isBusinessDomain(String tld) {
 		return !tld.equalsIgnoreCase("mil") && !tld.equalsIgnoreCase("edu") && !tld.equalsIgnoreCase("gov");
 	}
 }

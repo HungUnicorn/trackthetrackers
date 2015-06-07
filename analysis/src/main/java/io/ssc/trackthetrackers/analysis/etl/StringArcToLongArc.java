@@ -24,7 +24,7 @@ public class StringArcToLongArc {
 
 		DataSet<Tuple2<String, Long>> stringArcs = ReaderUtils.readStringArcs(env, argPathTrackingArc);
 
-		DataSet<Tuple2<String, Long>> nodes = ReaderUtils.readPldIndex(env, argPathThirdPartyIndex);
+		DataSet<Tuple2<String, Long>> nodes = ReaderUtils.readNameAndId(env, argPathThirdPartyIndex);
 
 		DataSet<Tuple2<Long,Long>> longArcs = stringArcs.joinWithTiny(nodes).where(0).equalTo(0).flatMap(new ProjectLongArc());
 		longArcs.writeAsCsv(argPathOut, WriteMode.OVERWRITE);

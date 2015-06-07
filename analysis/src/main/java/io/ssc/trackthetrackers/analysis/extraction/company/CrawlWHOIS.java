@@ -19,7 +19,7 @@
 package io.ssc.trackthetrackers.analysis.extraction.company;
 
 import io.ssc.trackthetrackers.Config;
-import io.ssc.trackthetrackers.analysis.extraction.DomainParser;
+import io.ssc.trackthetrackers.analysis.DomainParser;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -65,7 +65,7 @@ import org.apache.flink.shaded.com.google.common.net.InternetDomainName;
 public class CrawlWHOIS {
 
 	// Every x MILLISECONDS get WHOIS once
-	private static int WHOISdelay = 30;
+	private static int WHOISdelay = 100;
 
 	// If lookup takes too long, it's mainly due to connection refused or
 	// irregular whois response, so kill this lookup and continue to the next
@@ -86,9 +86,7 @@ public class CrawlWHOIS {
 	private static Set<String> domainCheckingSet;
 	private static Set<String> exceptionDomainSet;
 
-	private static String company;
-
-	private static DomainParser domainParser;
+	private static String company;	
 
 	public static void main(String args[]) throws Exception {
 
@@ -98,8 +96,8 @@ public class CrawlWHOIS {
 	}
 
 	public static void test(String domain) throws Exception {
-		domainParser = new DomainParser();
-		String processedDomain = domainParser.whoisDomain(domain);
+
+		String processedDomain = DomainParser.whoisDomain(domain);
 		System.out.println("test: " + processedDomain);
 		WhoisParser whoisParser = new WhoisParser();
 		System.out.println(whoisParser.getCompany(processedDomain));
@@ -108,8 +106,8 @@ public class CrawlWHOIS {
 	}
 
 	public static void showWhoisResult(String domain) throws Exception {
-		domainParser = new DomainParser();
-		String processedDomain = domainParser.whoisDomain(domain);
+		
+		String processedDomain = DomainParser.whoisDomain(domain);
 		System.out.println("test: " + processedDomain);
 		WhoisParser whoisParser = new WhoisParser();
 		whoisParser.getFullResult(processedDomain);
@@ -118,7 +116,7 @@ public class CrawlWHOIS {
 	}
 
 	public static void crawl() throws IOException, InterruptedException {
-		domainParser = new DomainParser();
+		
 		fileIO = new FileIO(domainCompanyPath, domainLookupPath, exceptionDomainPath);
 		// Incremental check: Check if the domain already processed before
 		INCREMENTAL_EXTRACTION = fileIO.checkProcessBefore();
@@ -127,7 +125,7 @@ public class CrawlWHOIS {
 		// Prepare the domains want to check
 		domainCheckingSet = new HashSet<String>();
 		exceptionDomainSet = new HashSet<String>();
-		domainCheckingSet = fileIO.readAsSortedSet();
+		domainCheckingSet = fileIO.readAsSortedByValueDescSet();
 
 		if (INCREMENTAL_EXTRACTION) {
 			domainKnownMap = fileIO.readDomainKnown();
@@ -146,11 +144,11 @@ public class CrawlWHOIS {
 			company = "N/A";
 			// Whois query needs top domain
 			// If not topDomain, using top domain get WHOIS data
-			String topDomain = domainParser.whoisDomain(domain);
-			String tld = domainParser.getTLD(topDomain);
+			String topDomain = DomainParser.whoisDomain(domain);
+			String tld = DomainParser.getTLD(topDomain);
 
 			// Possibly it's already known
-			if (company.equalsIgnoreCase("N/A") && !domainParser.isCCTLD(tld) && !topDomain.equalsIgnoreCase(domain)
+			if (company.equalsIgnoreCase("N/A") && !DomainParser.isCCTLD(tld) && !topDomain.equalsIgnoreCase(domain)
 					&& domainKnownMap.containsKey(topDomain)) {
 				// Possibly it's already known
 				company = isAlreadyKnown(topDomain, domain);
@@ -158,7 +156,7 @@ public class CrawlWHOIS {
 
 			// If it's a ccTLD, check if it contains symbol (ex.
 			// amazon.jp, google.fr), the length is 2.
-			else if (domainParser.isCCTLD(tld) && company.equalsIgnoreCase("N/A")) {
+			else if (DomainParser.isCCTLD(tld) && company.equalsIgnoreCase("N/A")) {
 				company = ccTLDIsAlreadyKnown(domain);
 			}
 
@@ -227,7 +225,7 @@ public class CrawlWHOIS {
 
 	public static String ccTLDIsAlreadyKnown(String domain) {
 
-		String checkingSymbol = domainParser.getSymbol(domain);
+		String checkingSymbol = DomainParser.getSymbol(domain);
 
 		Iterator<Entry<String, String>> iterator = domainKnownMap.entrySet().iterator();
 
@@ -236,7 +234,7 @@ public class CrawlWHOIS {
 			String domainKnown = currentEntry.getKey();
 			String companyKnown = currentEntry.getValue();
 
-			String knownSymbols = domainParser.getSymbol(domainKnown);
+			String knownSymbols = DomainParser.getSymbol(domainKnown);
 
 			if (knownSymbols.equalsIgnoreCase(checkingSymbol)) {
 				return companyKnown;

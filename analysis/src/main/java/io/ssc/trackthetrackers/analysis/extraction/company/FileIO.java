@@ -1,6 +1,6 @@
 package io.ssc.trackthetrackers.analysis.extraction.company;
 
-import io.ssc.trackthetrackers.analysis.extraction.DomainParser;
+import io.ssc.trackthetrackers.analysis.DomainParser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -90,7 +90,7 @@ public class FileIO {
 
 	// Prepare the domains already checked
 	public HashMap<String, String> readCleanCompany() throws IOException {
-		DomainParser domainParser = new DomainParser();
+		
 		HashMap<String, String> domainKnownMap = new HashMap<String, String>();
 		FileReader fileReader = new FileReader(domainCompanyPath);
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
@@ -101,7 +101,7 @@ public class FileIO {
 			String domainKnown = domainAndCompany[0];
 			String company = domainAndCompany[1];
 			if (!company.isEmpty()) {
-				if (domainParser.isCompany(company)) {
+				if (DomainParser.isCompany(company)) {
 					domainKnownMap.put(domainKnown, company);
 				}
 			}
@@ -116,7 +116,7 @@ public class FileIO {
 
 	// Read domain into a map descending sorted on the value and return a sorted
 	// set
-	public Set<String> readAsSortedSet() throws IOException {
+	public Set<String> readAsSortedByValueDescSet() throws IOException {
 
 		FileReader fileReader = new FileReader(domainLookupParth);
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
