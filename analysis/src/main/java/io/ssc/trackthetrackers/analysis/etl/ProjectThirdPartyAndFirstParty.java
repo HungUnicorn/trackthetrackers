@@ -16,17 +16,14 @@ import org.apache.flink.util.Collector;
 // Filter the remained columns
 
 public class ProjectThirdPartyAndFirstParty {
-	private static String argPathTrackingArc = Config
-			.get("analysis.results.path") + "quarter.tsv";
+	private static String argPathEmbedArc = "/home/sendoh/Downloads/quarter.tsv";
 
-	private static String argPathOut = Config.get("analysis.results.path")
-			+ "filteredQuarter.csv";
+	private static String argPathOut = Config.get("analysis.results.path") + "filteredQuarter";
 
 	public static void main(String[] args) throws Exception {
-		ExecutionEnvironment env = ExecutionEnvironment
-				.getExecutionEnvironment();
+		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
-		DataSource<String> inputArcs = env.readTextFile(argPathTrackingArc);
+		DataSource<String> inputArcs = env.readTextFile(argPathEmbedArc);
 
 		DataSet<Tuple2<String, Long>> arcs = inputArcs.flatMap(new ArcReader());
 
@@ -36,25 +33,23 @@ public class ProjectThirdPartyAndFirstParty {
 
 	}
 
-	public static class ArcReader implements
-			FlatMapFunction<String, Tuple2<String, Long>> {
+	public static class ArcReader implements FlatMapFunction<String, Tuple2<String, Long>> {
 
 		private static final Pattern SEPARATOR = Pattern.compile("[ \t]");
 
 		@Override
-		public void flatMap(String s, Collector<Tuple2<String, Long>> collector)
-				throws Exception {
+		public void flatMap(String s, Collector<Tuple2<String, Long>> collector) throws Exception {
 			if (!s.startsWith("%")) {
 				String[] tokens = SEPARATOR.split(s);
-				//System.out.println("normal String " + s);
-				// a bad string �4��b>��1����#�Uw�bsMQ�����е��|�G=n�����N8��i���
+				// System.out.println("normal String " + s);
+				// a bad string
+				// �4��b>��1����#�Uw�bsMQ�����е��|�G=n�����N8��i���
 				if (tokens.length < 2) {
-					return ;
+					return;
 				}
 				String thirdParty = tokens[1];
 				long firstParty = Long.parseLong(tokens[0]);
-				collector.collect(new Tuple2<String, Long>(thirdParty,
-						firstParty));
+				collector.collect(new Tuple2<String, Long>(thirdParty, firstParty));
 			}
 		}
 	}

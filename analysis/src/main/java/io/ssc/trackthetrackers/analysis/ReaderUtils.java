@@ -13,9 +13,9 @@ import org.apache.flink.util.Collector;
 public class ReaderUtils {
 
 	public static DataSet<Tuple2<String, Long>> readNameAndId(ExecutionEnvironment env, String filePath) {
-		DataSource<String> inputPldIndex = env.readTextFile(filePath);
-		DataSet<Tuple2<String, Long>> pldIndex = inputPldIndex.flatMap(new NameAndIdReader());
-		return pldIndex;
+		DataSource<String> inputNameAndId = env.readTextFile(filePath);
+		DataSet<Tuple2<String, Long>> nameAndId = inputNameAndId.flatMap(new NameAndIdReader());
+		return nameAndId;
 
 	}
 
@@ -42,15 +42,15 @@ public class ReaderUtils {
 
 	public static DataSet<Tuple2<String, Double>> readStringAndValue(ExecutionEnvironment env, String filePath) {
 		DataSource<String> inputNodeValue = env.readTextFile(filePath);
-		DataSet<Tuple2<String, Double>> arcs = inputNodeValue.flatMap(new StringAndValueReader());
-		return arcs;
+		DataSet<Tuple2<String, Double>> nodeValue = inputNodeValue.flatMap(new StringAndValueReader());
+		return nodeValue;
 
 	}
 
 	public static DataSet<Tuple2<Long, Double>> readLongAndValue(ExecutionEnvironment env, String filePath) {
 		DataSource<String> inputNodeValue = env.readTextFile(filePath);
-		DataSet<Tuple2<Long, Double>> arcs = inputNodeValue.flatMap(new LongAndValueReader());
-		return arcs;
+		DataSet<Tuple2<Long, Double>> nodeValue = inputNodeValue.flatMap(new LongAndValueReader());
+		return nodeValue;
 
 	}
 
@@ -67,10 +67,10 @@ public class ReaderUtils {
 		return domainAndCompany;
 
 	}
-	
-	public static DataSet<Tuple2<String, Long>> readNameWithComma(ExecutionEnvironment env, String filePath) {
+
+	public static DataSet<Tuple2<String, Long>> readNameWithCommaAndId(ExecutionEnvironment env, String filePath) {
 		DataSource<String> inputTsv = env.readTextFile(filePath);
-		DataSet<Tuple2<String, Long>> NamdWithCommaAndId = inputTsv.flatMap(new NameWithCommaReader());
+		DataSet<Tuple2<String, Long>> NamdWithCommaAndId = inputTsv.flatMap(new NameWithCommaAndIdReader());
 		return NamdWithCommaAndId;
 
 	}
@@ -126,7 +126,7 @@ public class ReaderUtils {
 
 	public static class StringArcReader implements FlatMapFunction<String, Tuple2<String, Long>> {
 
-		private static final Pattern SEPARATOR = Pattern.compile("[,]");
+		private static final Pattern SEPARATOR = Pattern.compile("[\t,]");
 
 		@Override
 		public void flatMap(String s, Collector<Tuple2<String, Long>> collector) throws Exception {
@@ -177,7 +177,8 @@ public class ReaderUtils {
 			if (!input.startsWith("%")) {
 				String domain = input.substring(0, input.indexOf(","));
 				String company = input.substring(input.indexOf(",") + 1).trim();
-				collector.collect(new Tuple2<String, String>(domain, company));
+				String companyCommaRemoved = CompanyParser.readCompanyCommaRemoved(company);
+				collector.collect(new Tuple2<String, String>(domain, companyCommaRemoved));
 			}
 		}
 	}
@@ -197,20 +198,19 @@ public class ReaderUtils {
 			}
 		}
 	}
-	
-	// Company name has , e.g. facebook, Inc.
-	public static class NameWithCommaReader implements FlatMapFunction<String, Tuple2<String, Long>> {
 
-		private static final Pattern SEPARATOR = Pattern.compile("[\t]");
+	// Company name has , e.g. facebook, Inc.
+	public static class NameWithCommaAndIdReader implements FlatMapFunction<String, Tuple2<String, Long>> {
 
 		@Override
-		public void flatMap(String s, Collector<Tuple2<String, Long>> collector) throws Exception {
-			if (!s.startsWith("%")) {
-				String[] tokens = SEPARATOR.split(s);
-				String nameWithComma = tokens[0];
-				Long id = Long.parseLong(tokens[1]);
-				collector.collect(new Tuple2<String, Long>(nameWithComma, id));
-			}
+		public void flatMap(String input, Collector<Tuple2<String, Long>> collector) throws Exception {
+			String name = input.substring(0, input.lastIndexOf(","));
+			String id = input.substring(input.indexOf(",") + 1).trim();
+
+			String nameCommaRemoved = CompanyParser.readCompanyCommaRemoved(name);
+			Long longId = Long.parseLong(id);
+			collector.collect(new Tuple2<String, Long>(nameCommaRemoved, longId));
+
 		}
 	}
 }

@@ -17,14 +17,14 @@ import org.apache.flink.util.Collector;
 //Generate distinct third party, using Set directly will be out of heap space  
 
 public class DistinctThridParty {
-	private static String argPathTrackingArc = Config.get("analysis.results.path") + "filteredQuarter.csv";
+	private static String argPathEmbedArc = Config.get("analysis.results.path") + "unifyArc";
 
-	private static String argPathOut = Config.get("analysis.results.path") + "distinctThirdParty.csv";
+	private static String argPathOut = Config.get("analysis.results.path") + "distinctThirdParty";
 
 	public static void main(String[] args) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
-		DataSet<Tuple2<String, Long>> arcs = ReaderUtils.readStringArcs(env, argPathTrackingArc);
+		DataSet<Tuple2<String, Long>> arcs = ReaderUtils.readStringArcs(env, argPathEmbedArc);
 
 		DataSet<Tuple1<String>> distinctThirdParty = arcs.<Tuple1<String>> project(0).distinct();
 

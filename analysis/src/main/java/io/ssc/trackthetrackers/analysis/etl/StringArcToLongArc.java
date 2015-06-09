@@ -13,16 +13,16 @@ import org.apache.flink.util.Collector;
 // Arc(String, Long) -> (Long, Long)
 
 public class StringArcToLongArc {
-	private static String argPathTrackingArc = Config.get("analysis.results.path") + "filteredQuarter.csv";
+	private static String argPathEmbedArc = Config.get("analysis.results.path") + "unifyArc";
 
-	private static String argPathThirdPartyIndex = Config.get("analysis.results.path") + "thirdPartyIndex";
+	private static String argPathThirdPartyIndex = Config.get("analysis.results.path") + "thirdPartyIndex.tsv";
 
 	private static String argPathOut = Config.get("analysis.results.path") + "longArc";
 
 	public static void main(String[] args) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
-		DataSet<Tuple2<String, Long>> stringArcs = ReaderUtils.readStringArcs(env, argPathTrackingArc);
+		DataSet<Tuple2<String, Long>> stringArcs = ReaderUtils.readStringArcs(env, argPathEmbedArc);
 
 		DataSet<Tuple2<String, Long>> nodes = ReaderUtils.readNameAndId(env, argPathThirdPartyIndex);
 

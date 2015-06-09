@@ -10,9 +10,9 @@ import java.io.IOException;
 
 // Give surrogate key (String, int)
 public class ThirdPartyIndexGenerator {
-	private static String argPathToDistinctThirdParty = Config.get("analysis.results.path") + "distinctThirdParty.csv";
+	private static String argPathToDistinctThirdParty = Config.get("analysis.results.path") + "distinctThirdParty";
 
-	private static String argPathOut = Config.get("analysis.results.path") + "thirdPartyIndex";
+	private static String argPathOut = Config.get("analysis.results.path") + "thirdPartyIndex.tsv";
 
 	public static void main(String[] args) throws Exception {
 		giveSurrogateKey(argPathToDistinctThirdParty, argPathOut);
@@ -31,7 +31,7 @@ public class ThirdPartyIndexGenerator {
 		int key = 0;
 		String line;
 		while ((line = bufferedReader.readLine()) != null) {
-			bufferedWriter.write(line + "," + key);
+			bufferedWriter.write(line + "\t" + key);
 			key++; 
 			bufferedWriter.newLine();
 		}

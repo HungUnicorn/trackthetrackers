@@ -4,7 +4,6 @@ import java.util.regex.Pattern;
 
 import org.apache.flink.shaded.com.google.common.net.InternetDomainName;
 
-// get the clean domain which topPrivateDomain() can recognize  
 public class DomainParser {
 
 	public static String alexaDomain(String site) {
@@ -81,54 +80,7 @@ public class DomainParser {
 
 	}
 
-	// The company name is hidden
-	public static boolean isCompany(String company) {
-		if (company != null) {
-			if (company.length() > 2 && !company.toLowerCase().contains("privacy") && !company.toLowerCase().contains("proxy")
-					&& !company.toLowerCase().contains("whois") && !company.toLowerCase().contains("a happy dreamhost customer")
-					&& !company.toLowerCase().contains("1&1 internet")) {
-				return true;
-			}
-		}
-		return false;
-
-	}
-
-	// The company name is hidden
-	public static boolean isCompanyStrict(String company) {
-		if (company != null) {
-			if (isCompany(company)) {
-				if (isCoporation(company) || isInc(company) || isLtd(company)) {
-					return true;
-				}
-			}
-		}
-		return false;
-
-	}
-
-	public static boolean isCoporation(String company) {
-		if (company.toLowerCase().contains("corporation")) {
-			return true;
-		}
-		return false;
-	}
-
-	public static boolean isInc(String company) {
-		if (company.toLowerCase().contains("inc")) {
-			return true;
-		}
-		return false;
-	}
-
-	public static boolean isLtd(String company) {
-		if (company.toLowerCase().contains("ltd")) {
-			return true;
-		}
-		return false;
-	}
-
 	public static boolean isBusinessDomain(String tld) {
-		return !tld.equalsIgnoreCase("mil") && !tld.equalsIgnoreCase("edu") && !tld.equalsIgnoreCase("gov");
+		return tld.equalsIgnoreCase("net") || tld.equalsIgnoreCase("com") || tld.equalsIgnoreCase("org");
 	}
 }
