@@ -37,38 +37,23 @@ import org.apache.flink.util.Collector;
 
 // Aggregate the arcs to company level
 // Output:(Long, Long)
-public class ArcCompanyLevel {
-
-	private static String argPathToDomainCompany = "/home/sendoh/trackthetrackers/analysis/src/resources/company/domainCompanyMapping";
-	private static String argPathToCompanyIndex = "/home/sendoh/datasets/companyIndex.tsv";
-	private static String argPathToEmbedArcs = Config.get("analysis.results.path") + "longArc";
+public class DistinctArcCompanyLevel {
+	
+	private static String argPathToEmbedArcs = Config.get("analysis.results.path") + "arcCompanyLevel";
 	private static String argPathToThirdPartyIndex = Config.get("analysis.results.path") + "thirdPartyIndex.tsv";
 
-	private static String argPathOut = Config.get("analysis.results.path") + "arcCompanyLevel";
+	private static String argPathOut = Config.get("analysis.results.path") + "distinctArcCompanyLevel";
 
 	public static void main(String args[]) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
 		DataSet<Tuple2<Long, Long>> longArcs = ReaderUtils.readArcs(env, argPathToEmbedArcs);
-		DataSet<Tuple2<String, Long>> thirdPartyIndex = ReaderUtils.readNameAndId(env, argPathToThirdPartyIndex);
-
-		// Name of third party, id of first party
-		DataSet<Tuple2<String, Long>> stringArcs = longArcs.join(thirdPartyIndex).where(0).equalTo(1).projectSecond(0).projectFirst(1);
-
-		DataSet<Tuple2<String, String>> domainCompany = ReaderUtils.readDomainCompanyFullName(env, argPathToDomainCompany);
-		DataSet<Tuple2<String, Long>> companyIndex = ReaderUtils.readNameWithCommaAndId(env, argPathToCompanyIndex);
-
-		// Domain, company index
-		DataSet<Tuple2<String, Long>> domainAndCompanyIndex = domainCompany.join(companyIndex).where(1).equalTo(0).projectFirst(0).projectSecond(1);
-
-		// Get company of third party for arcs
-		DataSet<Tuple2<Long, Long>> companyArcs = stringArcs.joinWithTiny(domainAndCompanyIndex).where(0).equalTo(0).projectSecond(1)
-				.projectFirst(1);
+		DataSet<Tuple2<String, Long>> thirdPartyIndex = ReaderUtils.readNameAndId(env, argPathToThirdPartyIndex);		
 		
 		// Can see means to see a first party once equals to see twice or many times
-		//DataSet<Tuple2<Long, Long>> distinctCompanyArcs = companyArcs.rebalance().distinct();
+		DataSet<Tuple2<Long, Long>> distinctCompanyArcs = longArcs.distinct();
 		
-		companyArcs.writeAsCsv(argPathOut, WriteMode.OVERWRITE);
+		distinctCompanyArcs.writeAsCsv(argPathOut, WriteMode.OVERWRITE);
 
 		env.execute();
 

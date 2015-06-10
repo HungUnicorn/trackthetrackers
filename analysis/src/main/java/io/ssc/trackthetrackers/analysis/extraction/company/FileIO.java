@@ -1,6 +1,6 @@
 package io.ssc.trackthetrackers.analysis.extraction.company;
 
-import io.ssc.trackthetrackers.analysis.DomainParser;
+import io.ssc.trackthetrackers.analysis.CompanyParser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -101,7 +101,7 @@ public class FileIO {
 			String domainKnown = domainAndCompany[0];
 			String company = domainAndCompany[1];
 			if (!company.isEmpty()) {
-				if (DomainParser.isCompany(company)) {
+				if (CompanyParser.isCompany(company)) {
 					domainKnownMap.put(domainKnown, company);
 				}
 			}

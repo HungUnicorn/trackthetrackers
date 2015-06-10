@@ -1,38 +1,38 @@
 package io.ssc.trackthetrackers.analysis.extraction.company;
 
+import io.ssc.trackthetrackers.Config;
+import io.ssc.trackthetrackers.analysis.CompanyParser;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.TreeMap;
-
-import io.ssc.trackthetrackers.Config;
-import io.ssc.trackthetrackers.analysis.DomainParser;
+import java.util.regex.Pattern;
 
 public class WhoisAnalysis {
 
+	private static String centrality = "pr";
 	private static String domainCompanyPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/domainCompanyMapping";
-	private static String domainLookupPath = Config.get("analysis.results.path") + "topTrafficThirdParty(Closeness)";
-	private static String companyRepeatAmountPath = Config.get("analysis.results.path") + "companyRepeatAmount(Closeness).csv";
+	private static String domainLookupPath = Config.get("analysis.results.path") + "topTraffic_" + centrality;
+	private static String companyRepeatAmountPath = Config.get("analysis.results.path") + "companyRepeatAmount_" + centrality + ".csv";
 	private static String companyAmountPath = Config.get("analysis.results.path") + "companyAmount.csv";
-	private static String companyStrictAmountPath = Config.get("analysis.results.path") + "companyStrictAmount(Closeness).csv";
+	private static String companyStrictAmountPath = Config.get("analysis.results.path") + "companyStrictAmount_" + centrality + ".csv";
 
 	private static int interval = 100;
-	private static int maxLimit = 11800;
 
 	public static void main(String args[]) throws IOException {
 
-		//crawlProcess("uguisudani-fujius.com");
-		companyRepeatAmount();
-		crawlCompanyStrictAmount();
+		int maxLimit = crawlProcess("indulgy.com");		
+		companyRepeatAmount(maxLimit);
+		crawlCompanyStrictAmount(maxLimit);
 	}
 
 	// Amount of crawl at each interval for Inc. and Coporation
-	public static void crawlCompanyStrictAmount() throws IOException {
+	public static void crawlCompanyStrictAmount(int maxLimit) throws IOException {
 		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
 		Set<String> lookupSortedSet = new HashSet<String>();
 		Map<String, String> domainCompanyMap = new HashMap<String, String>();
@@ -73,11 +73,11 @@ public class WhoisAnalysis {
 
 			String company = domainCompanyMap.get(entry);
 			if (company != null) {
-				if (DomainParser.isCompanyStrict(company)) {
+				if (CompanyParser.isCompanyStrict(company)) {
 					numMeaningfulResult++;
 				}
 			}
-			
+
 			order++;
 			if (order % interval == 0) {
 				intervalMap.put(order, numMeaningfulResult);
@@ -93,7 +93,7 @@ public class WhoisAnalysis {
 		incresingNumberInInterval(intervalMap, companyStrictAmountPath);
 	}
 
-	public static void companyRepeatAmount() throws IOException {
+	public static void companyRepeatAmount(int maxLimit) throws IOException {
 		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
 
 		Set<String> lookupSortedSet = new HashSet<String>();
@@ -110,7 +110,7 @@ public class WhoisAnalysis {
 		for (String domain : lookupSortedSet) {
 			String company = domainCompanyMap.get(domain);
 
-			if (knownCompanySet.contains(company) && DomainParser.isCompany(company)) {
+			if (knownCompanySet.contains(company) && CompanyParser.isCompany(company)) {
 				// System.out.println(domain + "," + company);
 				repeat++;
 			} else {
@@ -131,7 +131,7 @@ public class WhoisAnalysis {
 	}
 
 	// Amount of crawl at each interval
-	public static void crawlCompanyAmount() throws IOException {
+	public static void crawlCompanyAmount(int maxLimit) throws IOException {
 		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
 		Set<String> lookupSortedSet = new HashSet<String>();
 		Map<String, String> domainCompanyMap = new HashMap<String, String>();
@@ -172,7 +172,7 @@ public class WhoisAnalysis {
 
 			String company = domainCompanyMap.get(entry);
 			if (company != null) {
-				if (DomainParser.isCompany(company)) {
+				if (CompanyParser.isCompany(company)) {
 					numMeaningfulResult++;
 				}
 			}

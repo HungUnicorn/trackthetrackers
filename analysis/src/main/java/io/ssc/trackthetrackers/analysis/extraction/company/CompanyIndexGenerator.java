@@ -1,6 +1,7 @@
 package io.ssc.trackthetrackers.analysis.extraction.company;
 
 import io.ssc.trackthetrackers.Config;
+import io.ssc.trackthetrackers.analysis.CompanyParser;
 import io.ssc.trackthetrackers.analysis.DomainParser;
 
 import java.io.BufferedReader;
@@ -17,8 +18,7 @@ import java.util.regex.Pattern;
 public class CompanyIndexGenerator {
 	private static String argPathToDomainCompany = "/home/sendoh/trackthetrackers/analysis/src/resources/company/domainCompanyMapping";
 
-	private static String argPathOut = Config.get("analysis.results.path")
-			+ "companyIndex.tsv";
+	private static String argPathOut = Config.get("analysis.results.path") + "companyIndex.tsv";
 
 	public static void main(String[] args) throws Exception {
 		Set<String> companySet = new HashSet<String>();
@@ -28,17 +28,18 @@ public class CompanyIndexGenerator {
 	}
 
 	public static Set<String> readCompany(String filePath) throws IOException {
-		
+
 		HashSet<String> companySet = new HashSet<String>();
 		FileReader fileReader = new FileReader(argPathToDomainCompany);
 		String line;
-		
+
 		BufferedReader bufferedReader = new BufferedReader(fileReader);
 
-		while ((line = bufferedReader.readLine()) != null) {			
+		while ((line = bufferedReader.readLine()) != null) {
 			String company = line.substring(line.indexOf(",") + 1).trim();
-			if (DomainParser.isCompanyStrict(company)) {
-				companySet.add(company);
+			String companyRemoveComma = CompanyParser.readCompanyCommaRemoved(company);
+			if (CompanyParser.isCompanyStrict(companyRemoveComma)) {
+				companySet.add(companyRemoveComma);
 			}
 
 		}
@@ -48,8 +49,7 @@ public class CompanyIndexGenerator {
 		return companySet;
 	}
 
-	public static void writeCompanyWithSurrogatekey(String filePath,
-			Set<String> companySet) throws IOException {
+	public static void writeCompanyWithSurrogatekey(String filePath, Set<String> companySet) throws IOException {
 		FileWriter fileWriter = new FileWriter(filePath);
 
 		BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);

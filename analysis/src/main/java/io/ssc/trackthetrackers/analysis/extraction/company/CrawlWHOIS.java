@@ -32,8 +32,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.flink.shaded.com.google.common.net.InternetDomainName;
-
 // Extract domains' companies incrementally every X seconds via WHOISComapnyLookup.java
 // Input format:
 // google.com \n facebook.com \n yahoo.com \n
@@ -73,9 +71,9 @@ public class CrawlWHOIS {
 	private static int WHOISTimeout = 2;
 
 	private static String domainCompanyPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/domainCompanyMapping";
-	private static String domainLookupPath = Config.get("analysis.results.path") + "topTrafficThirdParty(Closeness)";
-	// private static String domainLookupPath =
-	// Config.get("analysis.results.path") + "thirdPartyIndex";
+	private static String measure = "h";
+	private static String domainLookupPath = Config.get("analysis.results.path") + "topTraffic_" + measure;
+	
 	private static String exceptionDomainPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/exceptionDomain";
 	private static FileIO fileIO;
 
@@ -86,7 +84,7 @@ public class CrawlWHOIS {
 	private static Set<String> domainCheckingSet;
 	private static Set<String> exceptionDomainSet;
 
-	private static String company;	
+	private static String company;
 
 	public static void main(String args[]) throws Exception {
 
@@ -106,7 +104,7 @@ public class CrawlWHOIS {
 	}
 
 	public static void showWhoisResult(String domain) throws Exception {
-		
+
 		String processedDomain = DomainParser.whoisDomain(domain);
 		System.out.println("test: " + processedDomain);
 		WhoisParser whoisParser = new WhoisParser();
@@ -116,7 +114,7 @@ public class CrawlWHOIS {
 	}
 
 	public static void crawl() throws IOException, InterruptedException {
-		
+
 		fileIO = new FileIO(domainCompanyPath, domainLookupPath, exceptionDomainPath);
 		// Incremental check: Check if the domain already processed before
 		INCREMENTAL_EXTRACTION = fileIO.checkProcessBefore();
