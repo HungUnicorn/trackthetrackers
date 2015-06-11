@@ -76,34 +76,6 @@ public class OneModeProjection {
 		}
 	}
 
-	public static class GenerateWeight extends RichMapFunction<Tuple2<Long, Long>, Tuple3<Long, Long, Double>> {
-
-		HashMap<Long, Double> nodeWeightMap = new HashMap<Long, Double>();
-
-		@Override
-		public void open(Configuration parameters) throws Exception {
-
-			ArrayList<Tuple2<Long, Double>> nodeWithWeight = (ArrayList) getRuntimeContext().getBroadcastVariable("nodeWithWeight");
-
-			for (Tuple2<Long, Double> node : nodeWithWeight) {
-				Long id = node.f0;
-				Double weight = node.f1;
-				nodeWeightMap.put(id, weight);
-			}
-		}
-
-		@Override
-		public Tuple3<Long, Long, Double> map(Tuple2<Long, Long> edge) throws Exception {
-			Long node = edge.f0;
-			Long connectNode = edge.f1;
-			Double nodeWeight = nodeWeightMap.get(node);
-			Double connectNodeWeight = nodeWeightMap.get(connectNode);
-			Double edgeWeight = nodeWeight + connectNodeWeight;
-
-			return new Tuple3<Long, Long, Double>(node, connectNode, edgeWeight);
-		}
-	}
-
 	public static class AddEdgeIfSignificant extends RichMapFunction<Tuple2<Long, Long[]>, Tuple3<Long, Long, Double>> {
 
 		HashMap<Long, Double> nodeWeightMap = new HashMap<Long, Double>();
@@ -164,43 +136,6 @@ public class OneModeProjection {
 				neighborsList.add(tuple.f1);
 			}
 			collector.collect(new Tuple2<Long, Long[]>(id, neighborsList.toArray(new Long[neighborsList.size()])));
-		}
-	}
-
-	public static class DistributeWeight implements FlatMapFunction<Tuple2<Tuple2<Long, Double>, Tuple2<Long, Long[]>>, Tuple3<Long, Long, Double>> {
-
-		@Override
-		public void flatMap(Tuple2<Tuple2<Long, Double>, Tuple2<Long, Long[]>> value, Collector<Tuple3<Long, Long, Double>> collector)
-				throws Exception {
-
-			Long node = value.f0.f0;
-			Long[] neighbors = value.f1.f1;
-			Double newWeight = value.f0.f1 / neighbors.length;
-			for (int i = 0; i < neighbors.length; i++)
-				collector.collect(new Tuple3<Long, Long, Double>(node, neighbors[i], newWeight));
-
-		}
-	}
-
-	public static class ProjectJoinArcs implements FlatMapFunction<Tuple2<Tuple2<Long, Long>, Tuple2<Long, Long>>, Tuple2<Long, Long>> {
-
-		@Override
-		public void flatMap(Tuple2<Tuple2<Long, Long>, Tuple2<Long, Long>> arcs, Collector<Tuple2<Long, Long>> collector) throws Exception {
-			Long node = arcs.f0.f0;
-			Long connectNode = arcs.f1.f0;
-			if (node < connectNode) {
-				collector.collect(new Tuple2<Long, Long>(node, connectNode));
-			}
-		}
-	}
-
-	public static class InitialWeight implements FlatMapFunction<Tuple2<Long, Long[]>, Tuple2<Long, Double>> {
-
-		@Override
-		public void flatMap(Tuple2<Long, Long[]> nodesWithNeighbors, Collector<Tuple2<Long, Double>> collector) throws Exception {
-			Long id = nodesWithNeighbors.f0;
-			Double initialWeight = 1.0;
-			collector.collect(new Tuple2<Long, Double>(id, initialWeight));
 		}
 	}
 
