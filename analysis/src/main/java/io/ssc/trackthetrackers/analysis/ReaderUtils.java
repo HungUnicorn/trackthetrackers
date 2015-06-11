@@ -204,8 +204,8 @@ public class ReaderUtils {
 
 		@Override
 		public void flatMap(String input, Collector<Tuple2<String, Long>> collector) throws Exception {
-			String name = input.substring(0, input.lastIndexOf(","));
-			String id = input.substring(input.indexOf(",") + 1).trim();
+			String name = input.substring(0, input.lastIndexOf("\t"));
+			String id = input.substring(input.indexOf("\t") + 1).trim();
 
 			String nameCommaRemoved = CompanyParser.readCompanyCommaRemoved(name);
 			Long longId = Long.parseLong(id);
