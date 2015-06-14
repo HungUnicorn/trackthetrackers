@@ -1,5 +1,7 @@
 package io.ssc.trackthetrackers.analysis.extraction.category;
 
+import io.ssc.trackthetrackers.Config;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -8,8 +10,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import io.ssc.trackthetrackers.Config;
 
 // Crawl Alexa category
 public class CrawlAlexa {
@@ -29,7 +29,7 @@ public class CrawlAlexa {
 
 	public static HashSet<String> siteSet;
 	public static ArrayList<String> urlList;
-	public static AlexaTopCategorySite alexa;
+	public static AlexaTopCategorySiteParser alexa;
 
 	public static void main(String args[]) throws InterruptedException,
 			IOException {
@@ -42,7 +42,7 @@ public class CrawlAlexa {
 		siteSet = new HashSet<String>();
 		urlList = new ArrayList<String>();
 
-		alexa = AlexaTopCategorySite.getInstance();
+		alexa = AlexaTopCategorySiteParser.getInstance();
 		getCategoryFromString(categories[0]);
 	}
 

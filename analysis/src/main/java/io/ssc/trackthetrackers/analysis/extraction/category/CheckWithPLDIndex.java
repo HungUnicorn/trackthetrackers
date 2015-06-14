@@ -27,7 +27,7 @@ public class CheckWithPLDIndex {
 		ExecutionEnvironment env = ExecutionEnvironment
 				.getExecutionEnvironment();
 
-		DataSet<Tuple2<String, Long>> pldIndex = ReaderUtils.readPldIndex(env,
+		DataSet<Tuple2<String, Long>> pldIndex = ReaderUtils.readNameAndId(env,
 				argPathToPLD);
 
 		DataSource<String> inputCategorySite = env
