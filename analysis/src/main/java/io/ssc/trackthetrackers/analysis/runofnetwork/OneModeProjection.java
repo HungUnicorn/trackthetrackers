@@ -2,14 +2,13 @@ package io.ssc.trackthetrackers.analysis.runofnetwork;
 
 import io.ssc.trackthetrackers.Config;
 import io.ssc.trackthetrackers.analysis.ReaderUtils;
-import io.ssc.trackthetrackers.analysis.runofnetwork.ResourceAllocation.GetNeighbors;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 import org.apache.flink.api.common.functions.FilterFunction;
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.DataSet;
@@ -23,9 +22,8 @@ import org.apache.flink.util.Collector;
 
 /* Get undirected weighted graph from bipartite graph (one-mode projection)
  Edge exists if two third parties embed the same first party significantly
- Use significance to decrease the connectivity
- This uses Sign test significance because the distribution is absolutely not a normal distribution 
- Critical region: Z(0.05) * (n/4)^1/2 + 2/n (From moment generating function)
+ Use significance test to decrease the connectivity
+ Critical region: Z(0.05) 
 
  reference: "A systematic approach to the one-mode projection of bipartite graphs"
 
@@ -40,8 +38,8 @@ public class OneModeProjection {
 
 	private static String argPathToEmbedssArcs = Config.get("analysis.results.path") + "distinctArcCompanyLevel";
 
-	private static String argPathNodeResource = Config.get("analysis.results.path") + "nodeResource";
-	private static String argPathOut = Config.get("analysis.results.path") + "undirectedWeighetedGraph";
+	private static String argPathNodeResource = Config.get("analysis.results.path") + "/RON/" + "nodeResource";
+	private static String argPathOut = Config.get("analysis.results.path") + "/RON/" + "undirectedWeighetedGraph";
 
 	public static void main(String args[]) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
@@ -55,7 +53,7 @@ public class OneModeProjection {
 		DataSet<Tuple2<Long, Long[]>> nodesYWithNeighbors = arcs.<Tuple2<Long, Long>> project(1, 0).groupBy(0).reduceGroup(new GetNeighbors());
 
 		// Generate edge based on weight compute before
-		DataSet<Tuple3<Long, Long, Double>> edgesWithWeight = nodesYWithNeighbors.map(new AddEdgeIfSignificant()).withBroadcastSet(nodeResource,
+		DataSet<Tuple3<Long, Long, Double>> edgesWithWeight = nodesYWithNeighbors.map(new AddSignificantEdge()).withBroadcastSet(nodeResource,
 				"nodeWithWeight");
 
 		DataSet<Tuple3<Long, Long, Double>> nonNullEdge = edgesWithWeight.filter(new FilterNullEdge());
@@ -76,13 +74,13 @@ public class OneModeProjection {
 		}
 	}
 
-	public static class AddEdgeIfSignificant extends RichMapFunction<Tuple2<Long, Long[]>, Tuple3<Long, Long, Double>> {
+	public static class AddSignificantEdge extends RichMapFunction<Tuple2<Long, Long[]>, Tuple3<Long, Long, Double>> {
 
 		HashMap<Long, Double> nodeWeightMap = new HashMap<Long, Double>();
-		// Critical region: Z(0.05) * (n/4)^1/2 + 2/n (From moment generating
-		// function)
-		// Edge weight = node1 weight + node2 weight, so size * 2
-		double criticalRegion = 1.645 * Math.sqrt(2 * nodeWeightMap.size() / 4) + (2 / 2 * nodeWeightMap.size());
+		// Critical region: Z(0.05)
+		double criticalRegion = 1.645;
+		DescriptiveStatistics stats = new DescriptiveStatistics();
+		double mean, std;
 
 		@Override
 		public void open(Configuration parameters) throws Exception {
@@ -93,7 +91,12 @@ public class OneModeProjection {
 				Long id = node.f0;
 				Double weight = node.f1;
 				nodeWeightMap.put(id, weight);
+				stats.addValue(weight);
 			}
+
+			mean = stats.getMean();
+			std = stats.getStandardDeviation();
+
 		}
 
 		@Override
@@ -111,8 +114,11 @@ public class OneModeProjection {
 						Double nodeWeight = nodeWeightMap.get(node);
 						Double connectNodeWeight = nodeWeightMap.get(connectNode);
 						Double edgeWeight = nodeWeight + connectNodeWeight;
-						if (edgeWeight > criticalRegion) {
-							return new Tuple3<Long, Long, Double>(node, connectNode, edgeWeight);
+						// Transformation Z = X - mean / std
+						Double weightTransformed = (edgeWeight - 2 * mean) / 2 * std;
+						// Significance test
+						if (weightTransformed > criticalRegion) {
+							return new Tuple3<Long, Long, Double>(node, connectNode, weightTransformed);
 						}
 					}
 				}
