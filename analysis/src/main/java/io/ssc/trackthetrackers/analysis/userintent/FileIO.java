@@ -106,11 +106,11 @@ public class FileIO {
 		return categoryValue;
 	}
 
-	public static void writeFile(String filePath, Map<String, Float> siteValueMap) throws IOException {
+	public static void writeFile(String filePath, Map<String, Float> stringValueMap) throws IOException {
 		FileWriter fileWriter = new FileWriter(filePath);
 		BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
 
-		Iterator<Entry<String, Float>> iterator = siteValueMap.entrySet().iterator();
+		Iterator<Entry<String, Float>> iterator = stringValueMap.entrySet().iterator();
 		while (iterator.hasNext()) {
 			Entry<String, Float> entry = iterator.next();
 			bufferedWriter.write(entry.getKey() + "," + entry.getValue());

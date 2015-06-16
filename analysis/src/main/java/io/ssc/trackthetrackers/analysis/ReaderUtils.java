@@ -61,6 +61,13 @@ public class ReaderUtils {
 
 	}
 
+	public static DataSet<Tuple2<String, String>> readDomainCategory(ExecutionEnvironment env, String filePath) {
+		DataSource<String> inputStringString = env.readTextFile(filePath);
+		DataSet<Tuple2<String, String>> StringString = inputStringString.flatMap(new StringStringReader());
+		return StringString;
+
+	}
+
 	public static DataSet<Tuple2<String, String>> readDomainCompanySymbol(ExecutionEnvironment env, String filePath) {
 		DataSource<String> inputDomainCompany = env.readTextFile(filePath);
 		DataSet<Tuple2<String, String>> domainAndCompany = inputDomainCompany.flatMap(new CompanySymbolReader());
@@ -165,6 +172,20 @@ public class ReaderUtils {
 				Long node = Long.parseLong(tokens[0]);
 				double value = Double.parseDouble(tokens[1]);
 				collector.collect(new Tuple2<Long, Double>(node, value));
+			}
+		}
+	}
+	
+	public static class StringStringReader implements FlatMapFunction<String, Tuple2<String, String>> {
+
+		private static final Pattern SEPARATOR = Pattern.compile("[\t,]");
+		@Override
+		public void flatMap(String s, Collector<Tuple2<String, String>> collector) throws Exception {
+			if (!s.startsWith("%")) {
+				String[] tokens = SEPARATOR.split(s);
+				String domain = tokens[0];
+				String category = tokens[1].toLowerCase();				
+				collector.collect(new Tuple2<String, String>(domain, category));
 			}
 		}
 	}

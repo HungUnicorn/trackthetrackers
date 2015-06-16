@@ -31,7 +31,7 @@ import org.apache.flink.util.Collector;
 public class ResourceAllocation {
 
 	private static String argPathToEmbedArcs = Config.get("analysis.results.path") + "distinctArcCompanyLevel";
-	private static String argPathNodeAndWeight = Config.get("analysis.results.path") + "nodeResource";
+	private static String argPathNodeAndWeight = Config.get("analysis.results.path") + "/RON/" + "nodeResource";
 
 	public static void main(String args[]) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
