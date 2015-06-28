@@ -1,34 +1,26 @@
 package io.ssc.trackthetrackers.analysis.runofnetwork;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.regex.Pattern;
-
 import io.ssc.trackthetrackers.Config;
 import io.ssc.trackthetrackers.analysis.ReaderUtils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+
 import org.apache.flink.api.common.ProgramDescription;
-import org.apache.flink.api.common.functions.FilterFunction;
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.GroupReduceFunction;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
-import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple1;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.core.fs.FileSystem.WriteMode;
-import org.apache.flink.graph.Edge;
 import org.apache.flink.graph.Graph;
 import org.apache.flink.graph.Vertex;
 import org.apache.flink.shaded.com.google.common.collect.Iterables;
 import org.apache.flink.util.Collector;
-
-import java.util.ArrayList;
 
 // Get weighted PageRank for undirected weighted graph
 // Due to undirected, the graph is already an ergodic Markov Chain
@@ -40,7 +32,7 @@ import java.util.ArrayList;
 public class WeightedPageRankMain implements ProgramDescription {
 
 	private static String argPathToWeightedEdges = Config.get("analysis.results.path") + "/RON/" + "undirectedWeighetedGraph";
-	private static String argPathOut = Config.get("analysis.results.path") + "/RON/" + "WeightedPageRank";
+	private static String argPathOut = Config.get("analysis.results.path") + "/RON/" + "weightedPageRank";
 
 	private static double DAMPENING_FACTOR = 0.85;
 	private static int maxIterations = 20;

@@ -4,8 +4,6 @@ import io.ssc.trackthetrackers.Config;
 import io.ssc.trackthetrackers.analysis.DomainParser;
 import io.ssc.trackthetrackers.analysis.ReaderUtils;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.flink.api.common.functions.FilterFunction;
@@ -66,12 +64,10 @@ public class FilterThirdPartyOnTLD {
 
 		@Override
 		public boolean filter(Tuple2<String, Long> arc) throws Exception {
-			String domain = arc.f0;
-
-			String tld = DomainParser.getTLD(domain);
+			String domain = arc.f0;			
 
 			// TLD is .com, .net, .org
-			if (DomainParser.isBusinessDomain(tld)) {
+			if (DomainParser.isBusinessDomain(domain)) {
 				return true;
 			}
 

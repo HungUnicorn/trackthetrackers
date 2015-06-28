@@ -2,6 +2,7 @@ package io.ssc.trackthetrackers.analysis.extraction.company;
 
 import io.ssc.trackthetrackers.Config;
 import io.ssc.trackthetrackers.analysis.CompanyParser;
+import io.ssc.trackthetrackers.analysis.DomainParser;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -17,16 +18,17 @@ public class WhoisAnalysis {
 
 	private static String centrality = "pr";
 	private static String domainCompanyPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/domainCompanyMapping";
-	private static String domainLookupPath = Config.get("analysis.results.path") + "topTraffic_" + centrality;
+	private static String domainLookupPath = Config.get("analysis.results.path") + "/Traffic/topTrafficThirdParty_" + centrality;
+
 	private static String companyRepeatAmountPath = Config.get("analysis.results.path") + "companyRepeatAmount_" + centrality + ".csv";
-	private static String companyAmountPath = Config.get("analysis.results.path") + "companyAmount.csv";
+	private static String companyAmountPath = Config.get("analysis.results.path") + "companyAmount_" + centrality + ".csv";
 	private static String companyStrictAmountPath = Config.get("analysis.results.path") + "companyStrictAmount_" + centrality + ".csv";
 
 	private static int interval = 100;
 
 	public static void main(String args[]) throws IOException {
 
-		int maxLimit = crawlProcess("indulgy.com");		
+		int maxLimit = crawlProcess("viewmalaysia.com");
 		companyRepeatAmount(maxLimit);
 		crawlCompanyStrictAmount(maxLimit);
 	}
@@ -41,8 +43,6 @@ public class WhoisAnalysis {
 		lookupSortedSet = fileIO.readAsSortedByValueDescSet();
 		domainCompanyMap = fileIO.readDomainKnown();
 
-		// int maxOrder = crawlProcess();
-
 		int numMeaningfulResult = 0;
 		int order = 0;
 		System.out.println("--------------");
@@ -51,15 +51,15 @@ public class WhoisAnalysis {
 		// (Interval, number of meaningful result)
 		for (String entry : lookupSortedSet) {
 
-			// Ignore the domain name for example, .com, .gov
 			Pattern SEPARATOR = Pattern.compile("[.]");
 			String tokens[] = SEPARATOR.split(entry);
 
+			// Ignore the domain name for example, .com, .gov
 			if (tokens.length < 2) {
 				break;
 			}
 
-			String tld = tokens[tokens.length - 1];
+			String tld = DomainParser.getTLD(entry);
 			String potentialTld = tokens[tokens.length - 2];
 
 			// TLD
@@ -72,8 +72,12 @@ public class WhoisAnalysis {
 			}
 
 			String company = domainCompanyMap.get(entry);
+
 			if (company != null) {
 				if (CompanyParser.isCompanyStrict(company)) {
+					if (order > 47000) {
+						System.out.println(company);
+					}
 					numMeaningfulResult++;
 				}
 			}
@@ -93,6 +97,7 @@ public class WhoisAnalysis {
 		incresingNumberInInterval(intervalMap, companyStrictAmountPath);
 	}
 
+	// How many company exist repeatedly
 	public static void companyRepeatAmount(int maxLimit) throws IOException {
 		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
 
@@ -139,8 +144,6 @@ public class WhoisAnalysis {
 
 		lookupSortedSet = fileIO.readAsSortedByValueDescSet();
 		domainCompanyMap = fileIO.readDomainKnown();
-
-		// int maxOrder = crawlProcess();
 
 		int numMeaningfulResult = 0;
 		int order = 0;
@@ -224,7 +227,7 @@ public class WhoisAnalysis {
 
 	// The current crawl progress. Put the last entry in domain company mapping
 	// file
-	private static int crawlProcess(String domain) throws IOException {
+	private static int crawlProcess(String lookupDomain) throws IOException {
 		FileIO fileIO = new FileIO(domainCompanyPath, domainLookupPath);
 		Set<String> lookupSortedSet = new HashSet<String>();
 		lookupSortedSet = fileIO.readAsSortedByValueDescSet();
@@ -232,7 +235,7 @@ public class WhoisAnalysis {
 
 		for (String entry : lookupSortedSet) {
 			maxOrder++;
-			if (entry.equalsIgnoreCase(domain)) {
+			if (entry.equalsIgnoreCase(lookupDomain)) {
 				break;
 			}
 		}

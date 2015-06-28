@@ -72,7 +72,7 @@ public class CrawlWHOIS {
 
 	private static String domainCompanyPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/domainCompanyMapping";
 	private static String measure = "h";
-	private static String domainLookupPath = Config.get("analysis.results.path") + "topTraffic_" + measure;
+	private static String domainLookupPath = Config.get("analysis.results.path") + "/Traffic/topTrafficThirdParty_" + measure;
 	
 	private static String exceptionDomainPath = "/home/sendoh/trackthetrackers/analysis/src/resources/company/exceptionDomain";
 	private static FileIO fileIO;

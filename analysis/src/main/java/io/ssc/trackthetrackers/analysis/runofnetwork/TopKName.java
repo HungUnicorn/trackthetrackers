@@ -1,14 +1,11 @@
-package io.ssc.trackthetrackers.analysis.userintent;
+package io.ssc.trackthetrackers.analysis.runofnetwork;
 
 import io.ssc.trackthetrackers.analysis.ReaderUtils;
-
-import java.util.regex.Pattern;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.operators.Order;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.api.java.operators.DataSource;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.FileSystem.WriteMode;
@@ -23,8 +20,8 @@ public class TopKName {
 	private static int topK = 10000;
 
 	private static String argPathToIndex = "/home/sendoh/datasets/companyIndex.tsv";
-	private static String argPathToNodeAndValue = "/home/sendoh/datasets/UserIntent/userIntent";
-	private static String argPathOut = "/home/sendoh/datasets/UserIntent/topIntent.csv";
+	private static String argPathToNodeAndValue = "/home/sendoh/datasets/RON/weightedPagezzzRank";
+	private static String argPathOut = "/home/sendoh/datasets/RON/topPR";
 
 	public static void main(String[] args) throws Exception {
 

@@ -70,7 +70,9 @@ public class DomainParser {
 	}
 
 	// Refer to http://en.wikipedia.org/wiki/List_of_Internet_top-level_domains
-	public static boolean isCCTLD(String tld) {
+	public static boolean isCCTLD(String domain) {
+		String tld = getTLD(domain);
+
 		if (!tld.equalsIgnoreCase("gov") && !tld.equalsIgnoreCase("net") && !tld.equalsIgnoreCase("com") && !tld.equalsIgnoreCase("org")
 				&& !tld.equalsIgnoreCase("edu") && !tld.equalsIgnoreCase("mil")) {
 			return true;
@@ -80,7 +82,10 @@ public class DomainParser {
 
 	}
 
-	public static boolean isBusinessDomain(String tld) {
+	/** Domain owned by company **/
+	public static boolean isBusinessDomain(String domain) {
+		String tld = getTLD(domain);
 		return tld.equalsIgnoreCase("net") || tld.equalsIgnoreCase("com") || tld.equalsIgnoreCase("org");
 	}
+
 }

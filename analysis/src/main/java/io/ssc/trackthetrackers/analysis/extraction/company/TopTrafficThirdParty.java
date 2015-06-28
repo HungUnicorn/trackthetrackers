@@ -19,6 +19,7 @@
 package io.ssc.trackthetrackers.analysis.extraction.company;
 
 import io.ssc.trackthetrackers.Config;
+import io.ssc.trackthetrackers.analysis.DomainParser;
 import io.ssc.trackthetrackers.analysis.ReaderUtils;
 
 import org.apache.flink.api.common.functions.FilterFunction;
@@ -33,12 +34,11 @@ import org.apache.flink.util.Collector;
 
 // Get the top K third party.
 public class TopTrafficThirdParty {
-	private static String centrality = "h";
-	// private static String measures = "h";
-	private static String argPathtrafficDistributionThirdParty = Config.get("analysis.results.path") + "traffic_" + centrality;
+	private static String centrality = "pr";
+	private static String argPathtrafficThirdParty = Config.get("analysis.results.path") + "Traffic/trafficThirdParty_" + centrality;
 	private static String argPathToThirdPartyIndex = Config.get("analysis.results.path") + "thirdPartyIndex.tsv";
 
-	private static String argPathOut = Config.get("analysis.results.path") + "topTraffic_" + centrality;
+	private static String argPathOut = Config.get("analysis.results.path") + "/Traffic/topTrafficThirdParty_" + centrality;
 
 	private static int topK = 100000;
 
@@ -46,7 +46,7 @@ public class TopTrafficThirdParty {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 
 		// Convert the input as (nodeName, value)
-		DataSet<Tuple2<Long, Double>> embedIDAndValue = ReaderUtils.readLongAndValue(env, argPathtrafficDistributionThirdParty);
+		DataSet<Tuple2<Long, Double>> embedIDAndValue = ReaderUtils.readLongAndValue(env, argPathtrafficThirdParty);
 
 		DataSet<Tuple2<Long, Double>> filterIDAndValue = embedIDAndValue.filter(new ValueFilter());
 		// Output 1, ID, value
@@ -63,7 +63,7 @@ public class TopTrafficThirdParty {
 		DataSet<Tuple2<String, Double>> topKwithName = topKReducer.join(filterThirdPartyIndex).where(1).equalTo(1).projectSecond(0).projectFirst(2);
 
 		topKwithName.writeAsCsv(argPathOut, WriteMode.OVERWRITE);
-		
+
 		env.execute();
 
 	}
@@ -81,8 +81,11 @@ public class TopTrafficThirdParty {
 		@Override
 		public boolean filter(Tuple2<String, Long> index) throws Exception {
 			String domain = index.f0;
-			String tld = domain.substring(domain.lastIndexOf(".") + 1).trim().toLowerCase();
-			return (!tld.equalsIgnoreCase("mil") && !tld.equalsIgnoreCase("edu") && !tld.equalsIgnoreCase("gov"));
+
+			if (DomainParser.isBusinessDomain(domain)) {
+				return true;
+			}
+			return false;
 		}
 	}
 

@@ -2,12 +2,13 @@ package io.ssc.trackthetrackers.analysis;
 
 public class CompanyParser {
 
-	// The company name is hidden
+	// The company name is hidden or the domain against whois policy
 	public static boolean isCompany(String company) {
 		if (company != null) {
 			if (company.length() > 2 && !company.toLowerCase().contains("privacy") && !company.toLowerCase().contains("proxy")
 					&& !company.toLowerCase().contains("whois") && !company.toLowerCase().contains("a happy dreamhost customer")
-					&& !company.toLowerCase().contains("1&1 internet")) {
+					&& !company.toLowerCase().contains("1&1 internet") && !company.toLowerCase().contains("godaddy")
+					&& !company.toLowerCase().contains("dnstination")) {
 				return true;
 			}
 		}

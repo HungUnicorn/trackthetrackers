@@ -27,16 +27,20 @@ import org.apache.flink.api.java.aggregation.Aggregations;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.core.fs.FileSystem.WriteMode;
 
-// Get the aggregated Centrality distritbution
+// Get third party's the aggregated Centrality representing web traffic
+// Use for crawl company information
+
 public class TrafficThirdParty {
 
-	private static String centrality = "h";
-	// private static String measures= "h";
+	// pr:PageRank, h:Harmonic closeness
+	private static String centrality = "pr";
+
 	private static String argPathToNodesAndValues = "/home/sendoh/Downloads/hostgraph-" + centrality + ".tsv";
 
 	private static String argPathToPLD = Config.get("webdatacommons.pldfile.unzipped");
 	private static String argPathToEmbedArcs = Config.get("analysis.results.path") + "longArc";
-	private static String argPathOut = Config.get("analysis.results.path") + "traffic_" + centrality;
+
+	private static String argPathOut = Config.get("analysis.results.path") + "/Traffic/trafficThirdParty_" + centrality;
 
 	public static void main(String args[]) throws Exception {
 		ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
