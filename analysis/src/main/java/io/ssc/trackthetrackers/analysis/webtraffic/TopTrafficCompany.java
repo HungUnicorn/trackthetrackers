@@ -33,8 +33,8 @@ import org.apache.flink.util.Collector;
 
 // Get the top K third party.
 public class TopTrafficCompany {
-	private static String centrality = "pr";
-	// private static String measures = "h";
+	//private static String centrality = "pr";
+	private static String centrality = "h";
 	private static String argPathTrafficCompany = Config.get("analysis.results.path") + "trafficCompany_" + centrality;
 	private static String argPathToCompanyIndex = Config.get("analysis.results.path") + "companyIndex.tsv";
 

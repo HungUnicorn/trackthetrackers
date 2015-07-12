@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
+// # company and #company have not known yet
 public class WhoisAnalysis {
 
 	private static String centrality = "pr";

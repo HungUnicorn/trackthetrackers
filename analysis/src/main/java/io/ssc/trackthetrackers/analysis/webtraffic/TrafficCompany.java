@@ -30,8 +30,8 @@ import org.apache.flink.core.fs.FileSystem.WriteMode;
 // Get the aggregated Centrality distritbution
 public class TrafficCompany {
 
-	private static String centrality = "pr";
-	// private static String measures= "h";
+	//private static String centrality = "pr";
+	private static String centrality= "h";
 	private static String argPathToNodesAndValues = "/home/sendoh/Downloads/hostgraph-" + centrality + ".tsv";
 
 	private static String argPathToPLD = Config.get("webdatacommons.pldfile.unzipped");

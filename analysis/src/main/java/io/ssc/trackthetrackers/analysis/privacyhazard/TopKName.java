@@ -1,4 +1,4 @@
-package io.ssc.trackthetrackers.analysis.runofnetwork;
+package io.ssc.trackthetrackers.analysis.privacyhazard;
 
 import io.ssc.trackthetrackers.analysis.ReaderUtils;
 
@@ -20,8 +20,8 @@ public class TopKName {
 	private static int topK = 10000;
 
 	private static String argPathToIndex = "/home/sendoh/datasets/companyIndex.tsv";
-	private static String argPathToNodeAndValue = "/home/sendoh/datasets/RON/nodeResource";
-	private static String argPathOut = "/home/sendoh/datasets/RON/topNodeResource";
+	private static String argPathToNodeAndValue = "/home/sendoh/datasets/UserIntent/privacyHazard.csv";
+	private static String argPathOut = "/home/sendoh/datasets/UserIntent/topHazard.csv";
 
 	public static void main(String[] args) throws Exception {
 

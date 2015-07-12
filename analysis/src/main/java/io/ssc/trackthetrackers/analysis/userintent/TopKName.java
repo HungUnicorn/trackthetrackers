@@ -23,7 +23,7 @@ public class TopKName {
 	private static int topK = 10000;
 
 	private static String argPathToIndex = "/home/sendoh/datasets/companyIndex.tsv";
-	private static String argPathToNodeAndValue = "/home/sendoh/datasets/UserIntent/userIntent";
+	private static String argPathToNodeAndValue = "/home/sendoh/datasets/UserIntent/userIntent.csv";
 	private static String argPathOut = "/home/sendoh/datasets/UserIntent/topIntent.csv";
 
 	public static void main(String[] args) throws Exception {

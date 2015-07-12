@@ -29,6 +29,11 @@ public class FileIO {
 	public FileIO() {
 	}
 
+	public FileIO(String domainComapanyPath) {
+		this.domainCompanyPath = domainComapanyPath;
+	}
+
+	
 	public FileIO(String domainComapanyPath, String domainLookupPath) {
 		this.domainCompanyPath = domainComapanyPath;
 		this.domainLookupParth = domainLookupPath;
